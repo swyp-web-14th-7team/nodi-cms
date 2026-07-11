@@ -1,0 +1,13 @@
+/*
+ * Tailwind CSS v4 + HeroUI v3
+ * @heroui/styles internally imports "tailwindcss" and registers the
+ * base / components / default-theme layers, so this single import wires up
+ * both Tailwind utilities and HeroUI component styles.
+ *
+ * Dark mode: add the `dark` class (or `data-theme="dark"`) to <html>.
+ */
+@import '@heroui/styles';
+
+/* Explicit source scanning (paths relative to this file: src/app/styles/). */
+@source '../../../index.html';
+@source '../../**/*.{ts,tsx}';

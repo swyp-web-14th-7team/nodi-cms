@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# env: localhost 기본값(.env)만 공개. 실제 배포 URL·개인 오버라이드는 커밋 금지.
+.env.local
+.env.*.local
+.env.deploy
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
