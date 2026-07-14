@@ -10,6 +10,9 @@ export const ROUTES = {
   skillCategories: '/skill-categories',
   interests: '/interests',
   jobTypes: '/job-types',
+  personalities: '/personalities',
+  purposes: '/purposes',
+  affiliationStatuses: '/affiliation-statuses',
   templates: '/templates',
   users: '/users',
 } as const

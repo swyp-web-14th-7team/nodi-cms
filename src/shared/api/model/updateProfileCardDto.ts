@@ -3,8 +3,9 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.1.4
+ * OpenAPI spec version: 0.2.0
  */
+import type { ProfileCardLinkInputDto } from "./profileCardLinkInputDto";
 
 export interface UpdateProfileCardDto {
   /**
@@ -31,4 +32,18 @@ export interface UpdateProfileCardDto {
   affiliationStatusId?: number;
   /** 소속 명칭 */
   affiliation?: string;
+  /**
+   * 프로필 카드 이미지 URL
+   * @minLength 10
+   * @maxLength 500
+   */
+  cardImageUrl?: string;
+  /**
+   * 프로필 이미지 URL
+   * @minLength 10
+   * @maxLength 500
+   */
+  profileImageUrl?: string;
+  /** 링크 목록 (전체 교체: 넘긴 목록으로 덮어씀). 각 항목 type — 0: EMAIL, 1: INSTAGRAM, 2: GITHUB, 3: LINKEDIN, 4: BEHANCE, 5: NOTION, 6: WEBSITE */
+  links?: ProfileCardLinkInputDto[];
 }

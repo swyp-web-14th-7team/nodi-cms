@@ -40,6 +40,12 @@ export default defineConfig({
         },
       },
     },
-    hooks: { afterAllFilesWrite: "prettier --write" },
+    // fix-model-barrel: orval tags-split 배럴 누락 버그를 매 코드젠 후 자가 복구한다.
+    hooks: {
+      afterAllFilesWrite: [
+        "node ./scripts/fix-model-barrel.mjs",
+        "prettier --write",
+      ],
+    },
   },
 });

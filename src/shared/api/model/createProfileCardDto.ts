@@ -3,19 +3,18 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.1.4
+ * OpenAPI spec version: 0.2.0
  */
 
 export interface CreateProfileCardDto {
   /**
-   * 템플릿 ID (number)
+   * 직군(jobType) ID (number)
    * @minimum 1
    */
-  templateId: number;
+  jobTypeId: number;
   /**
-   * 프로필 카드 이미지 URL
-   * @minLength 10
-   * @maxLength 500
+   * 목적 ID (팀 빌딩/친목/커피챗 등)
+   * @minimum 1
    */
-  cardImageUrl?: string;
+  purposeId?: number;
 }

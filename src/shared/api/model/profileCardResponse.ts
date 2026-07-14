@@ -3,18 +3,22 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.1.4
+ * OpenAPI spec version: 0.2.0
  */
 import type { AffiliationStatusResponse } from "./affiliationStatusResponse";
 import type { FormattedDate } from "./formattedDate";
 import type { PersonalityResponse } from "./personalityResponse";
 import type { ProfileCardInterestResponse } from "./profileCardInterestResponse";
-import type { SkillResponse } from "./skillResponse";
+import type { ProfileCardLinkResponse } from "./profileCardLinkResponse";
+import type { PurposeResponse } from "./purposeResponse";
 
 export interface ProfileCardResponse {
   id: string;
   nickname: string;
+  /** 프로필 카드 배경 이미지 url */
   cardImageUrl: string | null;
+  /** 프로필 이미지 url */
+  profileImageUrl: string | null;
   description: string;
   affiliation: string | null;
   isActive: boolean;
@@ -22,8 +26,14 @@ export interface ProfileCardResponse {
   userId: string;
   createdAt: FormattedDate;
   updatedAt: FormattedDate;
-  skills?: SkillResponse[];
+  /** 스킬 명칭 문자열 */
+  skills?: string[];
   interests?: ProfileCardInterestResponse[];
   personality?: PersonalityResponse | null;
   affiliationStatus?: AffiliationStatusResponse | null;
+  purpose?: PurposeResponse | null;
+  /** 기반 템플릿 직군 이름 */
+  jobTypeName?: string | null;
+  /** 링크 목록. 각 항목 type — 0: EMAIL, 1: INSTAGRAM, 2: GITHUB, 3: LINKEDIN, 4: BEHANCE, 5: NOTION, 6: WEBSITE */
+  links?: ProfileCardLinkResponse[];
 }

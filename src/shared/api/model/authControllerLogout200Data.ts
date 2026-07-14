@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.1.4
+ * OpenAPI spec version: 0.2.0
  */
 
 export type AuthControllerLogout200Data = { [key: string]: unknown };

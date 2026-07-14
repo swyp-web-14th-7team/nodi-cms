@@ -8,6 +8,9 @@ import { SkillsPage } from '../../pages/skills'
 import { SkillCategoriesPage } from '../../pages/skill-categories'
 import { InterestsPage } from '../../pages/interests'
 import { JobTypesPage } from '../../pages/job-types'
+import { PersonalitiesPage } from '../../pages/personalities'
+import { PurposesPage } from '../../pages/purposes'
+import { AffiliationStatusesPage } from '../../pages/affiliation-statuses'
 import { TemplatesPage } from '../../pages/templates'
 import { UsersPage } from '../../pages/users'
 import { NotFoundPage } from '../../pages/not-found'
@@ -33,6 +36,12 @@ export const router = createBrowserRouter([
           { path: ROUTES.skillCategories, element: <SkillCategoriesPage /> },
           { path: ROUTES.interests, element: <InterestsPage /> },
           { path: ROUTES.jobTypes, element: <JobTypesPage /> },
+          { path: ROUTES.personalities, element: <PersonalitiesPage /> },
+          { path: ROUTES.purposes, element: <PurposesPage /> },
+          {
+            path: ROUTES.affiliationStatuses,
+            element: <AffiliationStatusesPage />,
+          },
           { path: ROUTES.templates, element: <TemplatesPage /> },
           { path: ROUTES.users, element: <UsersPage /> },
           { path: '*', element: <NotFoundPage /> },
