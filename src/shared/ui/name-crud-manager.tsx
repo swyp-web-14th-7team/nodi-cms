@@ -2,10 +2,8 @@ import { useState } from 'react'
 import { Button, Input } from '@heroui/react'
 import { PageHeader } from './page-header'
 import { DataTable, type Column } from './data-table'
-import { Modal } from './modal'
-import { ConfirmDialog } from './confirm-dialog'
-import { FormField } from './form-field'
 import { PaginationBar } from './pagination-bar'
+import { useUndoableDelete } from '../lib'
 
 export interface NameEntity {
   id: number
@@ -15,7 +13,7 @@ export interface NameEntity {
 interface NameCrudManagerProps {
   title: string
   description: string
-  /** 이름 항목의 성격(예: "관심사"). 버튼/모달 문구에 쓰인다. */
+  /** 이름 항목의 성격(예: "관심사"). 버튼/문구에 쓰인다. */
   entityLabel: string
   items: NameEntity[]
   isLoading: boolean
@@ -39,9 +37,11 @@ interface NameCrudManagerProps {
 }
 
 /**
- * `{ id, name }` 형태의 단순 엔티티(관심사·직무·스킬 카테고리)를 위한 공통 CRUD 화면.
- * 목록/검색/페이지네이션 + 생성·수정 모달 + 삭제 확인을 한 컴포넌트로 처리한다.
- * API 호출은 상위(page)에서 주입한 콜백으로만 이뤄져 이 컴포넌트는 도메인을 모른다.
+ * `{ id, name }` 형태의 단순 엔티티(관심사·직무·목적·소속 상태)를 위한 공통 CRUD 화면.
+ * 컨벤션: 모달을 쓰지 않는다.
+ * - 추가: 상단 인라인 입력행에서 바로 생성
+ * - 수정: 행의 이름이 인라인 입력으로 바뀌고 행별 저장/취소
+ * - 삭제: 되돌리기 토스트(취소 가능·자동 확정)
  */
 export function NameCrudManager({
   title,
@@ -57,72 +57,93 @@ export function NameCrudManager({
   search,
   pagination,
 }: NameCrudManagerProps) {
-  const [editTarget, setEditTarget] = useState<NameEntity | 'new' | null>(null)
-  const [nameInput, setNameInput] = useState('')
-  const [deleteTarget, setDeleteTarget] = useState<NameEntity | null>(null)
+  const [addName, setAddName] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editName, setEditName] = useState('')
 
-  const openCreate = () => {
-    setNameInput('')
-    setEditTarget('new')
-  }
-  const openEdit = (item: NameEntity) => {
-    setNameInput(item.name)
-    setEditTarget(item)
-  }
-  const closeForm = () => setEditTarget(null)
+  const undo = useUndoableDelete<number>(onDelete)
+  const visibleItems = undo.filterVisible(items, (i) => i.id)
 
-  const submitForm = async () => {
-    const name = nameInput.trim()
+  const submitAdd = async () => {
+    const name = addName.trim()
     if (!name) return
-    if (editTarget === 'new') {
-      await onCreate(name)
-    } else if (editTarget) {
-      await onUpdate(editTarget.id, name)
-    }
-    closeForm()
+    await onCreate(name)
+    setAddName('')
   }
 
-  const confirmDelete = async () => {
-    if (!deleteTarget) return
-    await onDelete(deleteTarget.id)
-    setDeleteTarget(null)
+  const startEdit = (item: NameEntity) => {
+    setEditingId(item.id)
+    setEditName(item.name)
+  }
+  const cancelEdit = () => setEditingId(null)
+  const submitEdit = async () => {
+    if (editingId === null) return
+    const name = editName.trim()
+    if (!name) return
+    await onUpdate(editingId, name)
+    setEditingId(null)
   }
 
   const columns: Column<NameEntity>[] = [
     { key: 'id', header: 'ID', render: (i) => i.id, className: 'w-20 text-muted' },
-    { key: 'name', header: '이름', render: (i) => i.name },
+    {
+      key: 'name',
+      header: '이름',
+      render: (item) =>
+        editingId === item.id ? (
+          <Input
+            autoFocus
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submitEdit()
+              if (e.key === 'Escape') cancelEdit()
+            }}
+            className="max-w-xs"
+          />
+        ) : (
+          item.name
+        ),
+    },
     {
       key: 'actions',
       header: '',
       className: 'w-40 text-right',
-      render: (item) => (
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="ghost" onPress={() => openEdit(item)}>
-            수정
-          </Button>
-          <Button
-            size="sm"
-            variant="danger-soft"
-            onPress={() => setDeleteTarget(item)}
-          >
-            삭제
-          </Button>
-        </div>
-      ),
+      render: (item) =>
+        editingId === item.id ? (
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="primary"
+              onPress={submitEdit}
+              isDisabled={isMutating || editName.trim() === ''}
+            >
+              저장
+            </Button>
+            <Button size="sm" variant="ghost" onPress={cancelEdit}>
+              취소
+            </Button>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onPress={() => startEdit(item)}>
+              수정
+            </Button>
+            <Button
+              size="sm"
+              variant="danger-soft"
+              onPress={() => undo.request(item.id, item.name)}
+            >
+              삭제
+            </Button>
+          </div>
+        ),
     },
   ]
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader
-        title={title}
-        description={description}
-        actions={
-          <Button variant="primary" onPress={openCreate}>
-            {entityLabel} 추가
-          </Button>
-        }
-      />
+      <PageHeader title={title} description={description} />
 
       {search && (
         <Input
@@ -134,9 +155,29 @@ export function NameCrudManager({
         />
       )}
 
+      {/* 인라인 추가 */}
+      <div className="flex items-center gap-2 rounded-lg border border-divider bg-content2/50 p-2">
+        <Input
+          value={addName}
+          onChange={(e) => setAddName(e.target.value)}
+          placeholder={`새 ${entityLabel} 이름`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submitAdd()
+          }}
+          className="max-w-xs"
+        />
+        <Button
+          variant="primary"
+          onPress={submitAdd}
+          isDisabled={isMutating || addName.trim() === ''}
+        >
+          추가
+        </Button>
+      </div>
+
       <DataTable
         columns={columns}
-        items={items}
+        items={visibleItems}
         rowKey={(i) => i.id}
         isLoading={isLoading}
         isError={isError}
@@ -151,47 +192,6 @@ export function NameCrudManager({
           onPageChange={pagination.onPageChange}
         />
       )}
-
-      <Modal
-        isOpen={editTarget !== null}
-        onClose={closeForm}
-        title={editTarget === 'new' ? `${entityLabel} 추가` : `${entityLabel} 수정`}
-        footer={
-          <>
-            <Button variant="ghost" onPress={closeForm} isDisabled={isMutating}>
-              취소
-            </Button>
-            <Button
-              variant="primary"
-              onPress={submitForm}
-              isDisabled={isMutating || nameInput.trim().length === 0}
-            >
-              {isMutating ? '저장 중…' : '저장'}
-            </Button>
-          </>
-        }
-      >
-        <FormField label="이름">
-          <Input
-            autoFocus
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            placeholder={`${entityLabel} 이름`}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') submitForm()
-            }}
-          />
-        </FormField>
-      </Modal>
-
-      <ConfirmDialog
-        isOpen={deleteTarget !== null}
-        title={`${entityLabel} 삭제`}
-        message={`"${deleteTarget?.name}" 을(를) 삭제할까요? 되돌릴 수 없습니다.`}
-        isPending={isMutating}
-        onConfirm={confirmDelete}
-        onClose={() => setDeleteTarget(null)}
-      />
     </div>
   )
 }

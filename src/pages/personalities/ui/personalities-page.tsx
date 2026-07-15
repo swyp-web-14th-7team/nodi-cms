@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, Input, TextArea } from '@heroui/react'
 import {
@@ -15,22 +15,12 @@ import type {
   CreatePersonalityDto,
   JobTypeResponse,
 } from '../../../shared/api/model'
-import {
-  PageHeader,
-  DataTable,
-  Modal,
-  ConfirmDialog,
-  FormField,
-  NativeSelect,
-  PaginationBar,
-  type Column,
-} from '../../../shared/ui'
-import { useDebouncedValue } from '../../../shared/lib'
+import { PageHeader, FormField, NativeSelect, PaginationBar } from '../../../shared/ui'
+import { useDebouncedValue, useUndoableDelete } from '../../../shared/lib'
 
 const LIMIT = 10
 
-// 업로드 응답 url 은 base URL 이라 크기 변형(`/72.webp` 등)을 붙여 접근한다.
-// 36×36 표시에는 2x 인 72.webp 를 쓴다.
+// 업로드 응답 url 은 base URL 이라 크기 변형(`/72.webp` 등)을 붙여 접근한다. 36×36 엔 72.webp.
 const imageSrc = (baseUrl: string) => `${baseUrl}/72.webp`
 
 interface PersonalityForm {
@@ -39,7 +29,6 @@ interface PersonalityForm {
   jobTypeId: number | ''
   imageUrl: string
 }
-
 const emptyForm: PersonalityForm = {
   name: '',
   description: '',
@@ -47,19 +36,14 @@ const emptyForm: PersonalityForm = {
   imageUrl: '',
 }
 
+// null=닫힘, 'new'=추가, number=해당 id 수정
+type EditorMode = 'new' | number | null
+
 export function PersonalitiesPage() {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search)
-
-  const [editTarget, setEditTarget] = useState<
-    PersonalityResponse | 'new' | null
-  >(null)
-  const [form, setForm] = useState<PersonalityForm>(emptyForm)
-  const [deleteTarget, setDeleteTarget] = useState<PersonalityResponse | null>(
-    null,
-  )
 
   const params: PersonalitiesControllerFindAllParams = {
     page,
@@ -86,9 +70,11 @@ export function PersonalitiesPage() {
   const deleteMut = usePersonalitiesControllerDelete({
     mutation: { onSuccess: invalidate },
   })
+  const undo = useUndoableDelete<number>((id) =>
+    deleteMut.mutateAsync({ id: String(id) }),
+  )
 
-  // 이미지 업로드: 스펙에 body 가 없어 orval 이 인자를 안 만들어주므로
-  // customInstance 옵션으로 multipart FormData 를 직접 주입한다.
+  // 이미지 업로드(멀티파트 FormData 직접 주입)
   const uploadMut = useMutation({
     mutationFn: (file: File) => {
       const form = new FormData()
@@ -97,18 +83,19 @@ export function PersonalitiesPage() {
     },
   })
 
-  const isMutating =
-    createMut.isPending || updateMut.isPending || deleteMut.isPending
-
-  const items = data?.data.items ?? []
+  const items = undo.filterVisible(data?.data.items ?? [], (p) => p.id)
   const total = data?.data.metadata?.total ?? 0
-
   const jobTypeName = (id: number | null) =>
     id === null ? '-' : (jobTypes.find((jt) => jt.id === id)?.name ?? `#${id}`)
 
-  const openCreate = () => {
+  // ── 인라인 에디터 상태 ──
+  const [mode, setMode] = useState<EditorMode>(null)
+  const [form, setForm] = useState<PersonalityForm>(emptyForm)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const openAdd = () => {
     setForm(emptyForm)
-    setEditTarget('new')
+    setMode('new')
   }
   const openEdit = (p: PersonalityResponse) => {
     setForm({
@@ -117,20 +104,20 @@ export function PersonalitiesPage() {
       jobTypeId: p.jobTypeId ?? '',
       imageUrl: p.imageUrl ?? '',
     })
-    setEditTarget(p)
+    setMode(p.id)
   }
-  const closeForm = () => setEditTarget(null)
+  const closeEditor = () => setMode(null)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const onPickImage = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    e.target.value = '' // 같은 파일 재선택 허용
+    e.target.value = ''
     if (!file) return
     const res = await uploadMut.mutateAsync(file)
     setForm((f) => ({ ...f, imageUrl: res.url }))
   }
 
-  const submitForm = async () => {
+  const isSaving = createMut.isPending || updateMut.isPending
+  const submit = async () => {
     const name = form.name.trim()
     const description = form.description.trim()
     if (!name || !description) return
@@ -140,73 +127,120 @@ export function PersonalitiesPage() {
       ...(form.jobTypeId !== '' ? { jobTypeId: form.jobTypeId } : {}),
       ...(form.imageUrl.trim() ? { imageUrl: form.imageUrl.trim() } : {}),
     }
-    if (editTarget === 'new') {
-      await createMut.mutateAsync({ data: payload })
-    } else if (editTarget) {
-      await updateMut.mutateAsync({ id: String(editTarget.id), data: payload })
-    }
-    closeForm()
+    if (mode === 'new') await createMut.mutateAsync({ data: payload })
+    else if (typeof mode === 'number')
+      await updateMut.mutateAsync({ id: String(mode), data: payload })
+    closeEditor()
   }
 
-  const confirmDelete = async () => {
-    if (!deleteTarget) return
-    await deleteMut.mutateAsync({ id: String(deleteTarget.id) })
-    setDeleteTarget(null)
-  }
-
-  const columns: Column<PersonalityResponse>[] = [
-    { key: 'id', header: 'ID', render: (p) => p.id, className: 'w-16 text-muted' },
-    {
-      key: 'image',
-      header: '이미지',
-      className: 'w-20',
-      render: (p) =>
-        p.imageUrl ? (
-          <img
-            src={imageSrc(p.imageUrl)}
-            alt={p.name}
-            className="h-9 w-9 rounded object-cover"
+  const editor = (
+    <div className="flex flex-col gap-3 rounded-lg border border-primary/40 bg-content2/40 p-4">
+      <div className="grid gap-3 md:grid-cols-2">
+        <FormField label="이름">
+          <Input
+            autoFocus
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder="성향 이름"
           />
-        ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded bg-content2 text-xs text-muted">
-            —
-          </div>
-        ),
-    },
-    { key: 'name', header: '이름', render: (p) => p.name },
-    {
-      key: 'description',
-      header: '설명',
-      render: (p) => (
-        <span className="line-clamp-1 text-foreground/70">{p.description}</span>
-      ),
-    },
-    {
-      key: 'jobType',
-      header: '직군',
-      render: (p) => jobTypeName(p.jobTypeId),
-      className: 'w-28 text-foreground/70',
-    },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-40 text-right',
-      render: (personality) => (
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="ghost" onPress={() => openEdit(personality)}>
-            수정
-          </Button>
+        </FormField>
+        <FormField label="직군 (선택)">
+          <NativeSelect
+            value={form.jobTypeId}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                jobTypeId: e.target.value === '' ? '' : Number(e.target.value),
+              }))
+            }
+          >
+            <option value="">지정 안 함</option>
+            {jobTypes.map((jt) => (
+              <option key={jt.id} value={jt.id}>
+                {jt.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </FormField>
+      </div>
+      <FormField label="설명">
+        <TextArea
+          value={form.description}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, description: e.target.value }))
+          }
+          placeholder="성향 설명"
+          rows={2}
+        />
+      </FormField>
+      <FormField label="이미지 (선택)">
+        <div className="flex items-center gap-3">
+          {form.imageUrl ? (
+            <img
+              src={imageSrc(form.imageUrl)}
+              alt="미리보기"
+              className="h-9 w-9 rounded object-cover"
+            />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded bg-content2 text-xs text-muted">
+              —
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={onPickImage}
+            className="hidden"
+          />
           <Button
             size="sm"
-            variant="danger-soft"
-            onPress={() => setDeleteTarget(personality)}
+            variant="secondary"
+            isDisabled={uploadMut.isPending}
+            onPress={() => fileInputRef.current?.click()}
           >
-            삭제
+            {uploadMut.isPending
+              ? '업로드 중…'
+              : form.imageUrl
+                ? '이미지 변경'
+                : '이미지 업로드'}
           </Button>
+          {form.imageUrl && (
+            <Button
+              size="sm"
+              variant="ghost"
+              isDisabled={uploadMut.isPending}
+              onPress={() => setForm((f) => ({ ...f, imageUrl: '' }))}
+            >
+              제거
+            </Button>
+          )}
+          {uploadMut.isError && (
+            <span className="text-xs text-danger">업로드 실패</span>
+          )}
         </div>
-      ),
-    },
-  ]
+      </FormField>
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onPress={closeEditor} isDisabled={isSaving}>
+          취소
+        </Button>
+        <Button
+          variant="primary"
+          onPress={submit}
+          isDisabled={
+            isSaving ||
+            uploadMut.isPending ||
+            form.name.trim() === '' ||
+            form.description.trim() === ''
+          }
+        >
+          {isSaving ? '저장 중…' : '저장'}
+        </Button>
+      </div>
+    </div>
+  )
+
+  const colCount = 6
 
   return (
     <div className="flex flex-col gap-4">
@@ -214,7 +248,11 @@ export function PersonalitiesPage() {
         title="성향"
         description="프로필 카드의 성향(퍼스널리티)을 관리합니다."
         actions={
-          <Button variant="primary" onPress={openCreate}>
+          <Button
+            variant="primary"
+            onPress={openAdd}
+            isDisabled={mode === 'new'}
+          >
             성향 추가
           </Button>
         }
@@ -231,14 +269,93 @@ export function PersonalitiesPage() {
         className="max-w-xs"
       />
 
-      <DataTable
-        columns={columns}
-        items={items}
-        rowKey={(p) => p.id}
-        isLoading={isLoading}
-        isError={isError}
-        emptyMessage="등록된 성향이 없습니다."
-      />
+      {/* 추가 인라인 에디터 */}
+      {mode === 'new' && editor}
+
+      <div className="overflow-x-auto rounded-lg border border-divider">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-divider bg-content2 text-left text-muted">
+              <th className="w-16 px-4 py-2.5 font-medium">ID</th>
+              <th className="w-20 px-4 py-2.5 font-medium">이미지</th>
+              <th className="px-4 py-2.5 font-medium">이름</th>
+              <th className="px-4 py-2.5 font-medium">설명</th>
+              <th className="w-28 px-4 py-2.5 font-medium">직군</th>
+              <th className="w-40 px-4 py-2.5 font-medium"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <StateRow colSpan={colCount}>불러오는 중…</StateRow>
+            ) : isError ? (
+              <StateRow colSpan={colCount}>
+                데이터를 불러오지 못했습니다.
+              </StateRow>
+            ) : items.length === 0 ? (
+              <StateRow colSpan={colCount}>
+                등록된 성향이 없습니다.
+              </StateRow>
+            ) : (
+              items.map((p) =>
+                mode === p.id ? (
+                  <tr key={p.id} className="border-b border-divider last:border-b-0">
+                    <td colSpan={colCount} className="p-3">
+                      {editor}
+                    </td>
+                  </tr>
+                ) : (
+                  <tr
+                    key={p.id}
+                    className="border-b border-divider last:border-b-0 hover:bg-content2/50"
+                  >
+                    <td className="px-4 py-2.5 text-muted">{p.id}</td>
+                    <td className="px-4 py-2.5">
+                      {p.imageUrl ? (
+                        <img
+                          src={imageSrc(p.imageUrl)}
+                          alt={p.name}
+                          className="h-9 w-9 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-9 w-9 items-center justify-center rounded bg-content2 text-xs text-muted">
+                          —
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-foreground">{p.name}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="line-clamp-1 text-foreground/70">
+                        {p.description}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-foreground/70">
+                      {jobTypeName(p.jobTypeId)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onPress={() => openEdit(p)}
+                        >
+                          수정
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger-soft"
+                          onPress={() => undo.request(p.id, p.name)}
+                        >
+                          삭제
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ),
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {total > 0 && (
         <PaginationBar
@@ -248,128 +365,22 @@ export function PersonalitiesPage() {
           onPageChange={setPage}
         />
       )}
-
-      <Modal
-        isOpen={editTarget !== null}
-        onClose={closeForm}
-        title={editTarget === 'new' ? '성향 추가' : '성향 수정'}
-        footer={
-          <>
-            <Button variant="ghost" onPress={closeForm} isDisabled={isMutating}>
-              취소
-            </Button>
-            <Button
-              variant="primary"
-              onPress={submitForm}
-              isDisabled={
-                isMutating ||
-                uploadMut.isPending ||
-                form.name.trim() === '' ||
-                form.description.trim() === ''
-              }
-            >
-              {isMutating ? '저장 중…' : '저장'}
-            </Button>
-          </>
-        }
-      >
-        <div className="flex flex-col gap-4">
-          <FormField label="이름">
-            <Input
-              autoFocus
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="성향 이름"
-            />
-          </FormField>
-          <FormField label="설명">
-            <TextArea
-              value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
-              }
-              placeholder="성향 설명"
-              rows={3}
-            />
-          </FormField>
-          <FormField label="직군 (선택)">
-            <NativeSelect
-              value={form.jobTypeId}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  jobTypeId: e.target.value === '' ? '' : Number(e.target.value),
-                }))
-              }
-            >
-              <option value="">지정 안 함</option>
-              {jobTypes.map((jt) => (
-                <option key={jt.id} value={jt.id}>
-                  {jt.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </FormField>
-          <FormField label="이미지 (선택)">
-            <div className="flex items-center gap-3">
-              {form.imageUrl ? (
-                <img
-                  src={imageSrc(form.imageUrl)}
-                  alt="미리보기"
-                  className="h-9 w-9 rounded object-cover"
-                />
-              ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded bg-content2 text-xs text-muted">
-                  —
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={onPickImage}
-                className="hidden"
-              />
-              <Button
-                size="sm"
-                variant="secondary"
-                isDisabled={uploadMut.isPending}
-                onPress={() => fileInputRef.current?.click()}
-              >
-                {uploadMut.isPending
-                  ? '업로드 중…'
-                  : form.imageUrl
-                    ? '이미지 변경'
-                    : '이미지 업로드'}
-              </Button>
-              {form.imageUrl && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  isDisabled={uploadMut.isPending}
-                  onPress={() => setForm((f) => ({ ...f, imageUrl: '' }))}
-                >
-                  제거
-                </Button>
-              )}
-            </div>
-            {uploadMut.isError && (
-              <span className="text-xs text-danger">
-                업로드에 실패했습니다. 다시 시도해 주세요.
-              </span>
-            )}
-          </FormField>
-        </div>
-      </Modal>
-
-      <ConfirmDialog
-        isOpen={deleteTarget !== null}
-        title="성향 삭제"
-        message={`"${deleteTarget?.name}" 을(를) 삭제할까요? 되돌릴 수 없습니다.`}
-        isPending={isMutating}
-        onConfirm={confirmDelete}
-        onClose={() => setDeleteTarget(null)}
-      />
     </div>
+  )
+}
+
+function StateRow({
+  colSpan,
+  children,
+}: {
+  colSpan: number
+  children: ReactNode
+}) {
+  return (
+    <tr>
+      <td colSpan={colSpan} className="px-4 py-10 text-center text-muted">
+        {children}
+      </td>
+    </tr>
   )
 }
