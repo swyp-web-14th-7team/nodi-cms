@@ -11,3 +11,28 @@
 /* Explicit source scanning (paths relative to this file: src/app/styles/). */
 @source '../../../index.html';
 @source '../../**/*.{ts,tsx}';
+
+/*
+ * 테마 토글 스위치(features/theme)의 색.
+ *
+ * HeroUI 기본 accent 는 파란색이라 이 CMS 팔레트에 없는 색이다. 무채색으로 덮는다.
+ * 스위치 내부는 accent 계열만 참조한다:
+ *   켜짐 배경=--accent / thumb 배경=--accent-foreground / 아이콘=--accent
+ *   켜짐 hover=--accent-hover / 포커스 링=--focus
+ *
+ * ⚠️ --accent-hover 와 --focus 는 :root(=<html>) 에서 var(--accent) 를 참조해 정의된다.
+ * 커스텀 프로퍼티는 "선언된 엘리먼트"에서 값이 확정된 뒤 상속되므로, 하위에서 --accent
+ * 만 덮으면 이 둘은 이미 파랗게 굳은 값이 그대로 내려온다. 파생 토큰도 함께 덮는 이유다.
+ *
+ * 테마 토큰(foreground/background)만 쓰므로 라이트·다크 양쪽에서 대비가 유지된다.
+ */
+.theme-switch {
+  --accent: var(--foreground);
+  --accent-foreground: var(--background);
+  --accent-hover: color-mix(
+    in oklab,
+    var(--foreground) 88%,
+    var(--background) 12%
+  );
+  --focus: var(--muted);
+}

@@ -1,10 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>nodi-cms</title>
+    <!--
+      저장된 테마를 첫 페인트 전에 <html> 에 적용한다. React 마운트를 기다리면
+      기본값(dark)으로 한 번 그려진 뒤 바뀌어 화면이 번쩍인다.
+      키/동작은 features/theme 의 theme-store 와 반드시 일치해야 한다.
+    -->
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('nodi-cms.theme')
+          var theme = stored === 'light' || stored === 'dark' ? stored : 'dark'
+          document.documentElement.classList.toggle('dark', theme === 'dark')
+          document.documentElement.dataset.theme = theme
+        } catch (e) {
+          // localStorage 차단 환경 → 기본값(dark) 유지
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
