@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useRef, useState, type ChangeEvent } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, Input, TextArea } from '@heroui/react'
 import {
   usePersonalitiesControllerFindAll,
@@ -7,6 +7,7 @@ import {
   usePersonalitiesControllerUpdate,
   usePersonalitiesControllerDelete,
 } from '../../../shared/api/endpoints/personalities/personalities'
+import { filesControllerUploadPersonalityImage } from '../../../shared/api/endpoints/files/files'
 import { useJobTypeControllerFindAll } from '../../../shared/api/endpoints/job-type/job-type'
 import type {
   PersonalityResponse,
@@ -27,6 +28,10 @@ import {
 import { useDebouncedValue } from '../../../shared/lib'
 
 const LIMIT = 10
+
+// 업로드 응답 url 은 base URL 이라 크기 변형(`/72.webp` 등)을 붙여 접근한다.
+// 36×36 표시에는 2x 인 72.webp 를 쓴다.
+const imageSrc = (baseUrl: string) => `${baseUrl}/72.webp`
 
 interface PersonalityForm {
   name: string
@@ -81,6 +86,17 @@ export function PersonalitiesPage() {
   const deleteMut = usePersonalitiesControllerDelete({
     mutation: { onSuccess: invalidate },
   })
+
+  // 이미지 업로드: 스펙에 body 가 없어 orval 이 인자를 안 만들어주므로
+  // customInstance 옵션으로 multipart FormData 를 직접 주입한다.
+  const uploadMut = useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return filesControllerUploadPersonalityImage({ data: form })
+    },
+  })
+
   const isMutating =
     createMut.isPending || updateMut.isPending || deleteMut.isPending
 
@@ -104,6 +120,15 @@ export function PersonalitiesPage() {
     setEditTarget(p)
   }
   const closeForm = () => setEditTarget(null)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const onPickImage = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // 같은 파일 재선택 허용
+    if (!file) return
+    const res = await uploadMut.mutateAsync(file)
+    setForm((f) => ({ ...f, imageUrl: res.url }))
+  }
 
   const submitForm = async () => {
     const name = form.name.trim()
@@ -131,6 +156,23 @@ export function PersonalitiesPage() {
 
   const columns: Column<PersonalityResponse>[] = [
     { key: 'id', header: 'ID', render: (p) => p.id, className: 'w-16 text-muted' },
+    {
+      key: 'image',
+      header: '이미지',
+      className: 'w-20',
+      render: (p) =>
+        p.imageUrl ? (
+          <img
+            src={imageSrc(p.imageUrl)}
+            alt={p.name}
+            className="h-9 w-9 rounded object-cover"
+          />
+        ) : (
+          <div className="flex h-9 w-9 items-center justify-center rounded bg-content2 text-xs text-muted">
+            —
+          </div>
+        ),
+    },
     { key: 'name', header: '이름', render: (p) => p.name },
     {
       key: 'description',
@@ -221,6 +263,7 @@ export function PersonalitiesPage() {
               onPress={submitForm}
               isDisabled={
                 isMutating ||
+                uploadMut.isPending ||
                 form.name.trim() === '' ||
                 form.description.trim() === ''
               }
@@ -267,14 +310,54 @@ export function PersonalitiesPage() {
               ))}
             </NativeSelect>
           </FormField>
-          <FormField label="이미지 URL (선택)">
-            <Input
-              value={form.imageUrl}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, imageUrl: e.target.value }))
-              }
-              placeholder="https://…"
-            />
+          <FormField label="이미지 (선택)">
+            <div className="flex items-center gap-3">
+              {form.imageUrl ? (
+                <img
+                  src={imageSrc(form.imageUrl)}
+                  alt="미리보기"
+                  className="h-9 w-9 rounded object-cover"
+                />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded bg-content2 text-xs text-muted">
+                  —
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={onPickImage}
+                className="hidden"
+              />
+              <Button
+                size="sm"
+                variant="secondary"
+                isDisabled={uploadMut.isPending}
+                onPress={() => fileInputRef.current?.click()}
+              >
+                {uploadMut.isPending
+                  ? '업로드 중…'
+                  : form.imageUrl
+                    ? '이미지 변경'
+                    : '이미지 업로드'}
+              </Button>
+              {form.imageUrl && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  isDisabled={uploadMut.isPending}
+                  onPress={() => setForm((f) => ({ ...f, imageUrl: '' }))}
+                >
+                  제거
+                </Button>
+              )}
+            </div>
+            {uploadMut.isError && (
+              <span className="text-xs text-danger">
+                업로드에 실패했습니다. 다시 시도해 주세요.
+              </span>
+            )}
           </FormField>
         </div>
       </Modal>

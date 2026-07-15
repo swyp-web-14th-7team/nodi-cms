@@ -15,6 +15,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: '성향', to: ROUTES.personalities },
   { label: '목적', to: ROUTES.purposes },
   { label: '소속 상태', to: ROUTES.affiliationStatuses },
-  { label: '템플릿', to: ROUTES.templates },
   { label: '사용자', to: ROUTES.users },
 ]

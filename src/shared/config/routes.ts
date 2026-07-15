@@ -12,6 +12,5 @@ export const ROUTES = {
   personalities: '/personalities',
   purposes: '/purposes',
   affiliationStatuses: '/affiliation-statuses',
-  templates: '/templates',
   users: '/users',
 } as const

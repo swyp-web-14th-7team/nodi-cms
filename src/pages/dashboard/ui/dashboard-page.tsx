@@ -1,7 +1,6 @@
 import { Card, CardContent } from '@heroui/react'
 import { Link } from 'react-router-dom'
 import { useProfileCardsControllerGetProfileCards } from '../../../shared/api/endpoints/profile-cards/profile-cards'
-import { useProfileCardTemplatesControllerFindAll } from '../../../shared/api/endpoints/profile-card-templates/profile-card-templates'
 import { useSkillsControllerFindAll } from '../../../shared/api/endpoints/skills/skills'
 import { useInterestsControllerFindAll } from '../../../shared/api/endpoints/interests/interests'
 import { useJobTypeControllerFindAll } from '../../../shared/api/endpoints/job-type/job-type'
@@ -12,7 +11,6 @@ import { ROUTES } from '../../../shared/config'
 export function DashboardPage() {
   // total 만 필요하므로 limit=1 로 가볍게 조회한다.
   const profileCards = useProfileCardsControllerGetProfileCards({ limit: 1 })
-  const templates = useProfileCardTemplatesControllerFindAll({ limit: 1 })
   const skills = useSkillsControllerFindAll({ limit: 1 })
   const interests = useInterestsControllerFindAll({ limit: 1 })
   const jobTypes = useJobTypeControllerFindAll({ limit: 1 })
@@ -24,12 +22,6 @@ export function DashboardPage() {
       to: ROUTES.profileCards,
       value: profileCards.data?.data.metadata?.total,
       isLoading: profileCards.isLoading,
-    },
-    {
-      label: '템플릿',
-      to: ROUTES.templates,
-      value: templates.data?.data.metadata?.total,
-      isLoading: templates.isLoading,
     },
     {
       label: '스킬',

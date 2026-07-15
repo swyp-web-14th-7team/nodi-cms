@@ -10,7 +10,6 @@ import { JobTypesPage } from '../../pages/job-types'
 import { PersonalitiesPage } from '../../pages/personalities'
 import { PurposesPage } from '../../pages/purposes'
 import { AffiliationStatusesPage } from '../../pages/affiliation-statuses'
-import { TemplatesPage } from '../../pages/templates'
 import { UsersPage } from '../../pages/users'
 import { NotFoundPage } from '../../pages/not-found'
 import { LoginPage } from '../../pages/login'
@@ -40,7 +39,6 @@ export const router = createBrowserRouter([
             path: ROUTES.affiliationStatuses,
             element: <AffiliationStatusesPage />,
           },
-          { path: ROUTES.templates, element: <TemplatesPage /> },
           { path: ROUTES.users, element: <UsersPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],

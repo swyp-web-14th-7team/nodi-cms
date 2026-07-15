@@ -16,6 +16,7 @@ import type {
 import type {
   FilesControllerUploadProfileImage200,
   UploadImageDto,
+  UploadImageResponse,
 } from "../../model";
 
 import { customInstance } from "../../http-client";
@@ -124,6 +125,84 @@ export const useFilesControllerUploadProfileImage = <
 > => {
   return useMutation(
     getFilesControllerUploadProfileImageMutationOptions(options),
+    queryClient,
+  );
+};
+export const filesControllerUploadPersonalityImage = (
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal,
+) => {
+  return customInstance<UploadImageResponse>(
+    { url: `/files/personality-image/upload`, method: "POST", signal },
+    options,
+  );
+};
+
+export const getFilesControllerUploadPersonalityImageMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["filesControllerUploadPersonalityImage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
+    void
+  > = () => {
+    return filesControllerUploadPersonalityImage(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FilesControllerUploadPersonalityImageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>
+>;
+
+export type FilesControllerUploadPersonalityImageMutationError =
+  ErrorType<void>;
+
+export const useFilesControllerUploadPersonalityImage = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(
+    getFilesControllerUploadPersonalityImageMutationOptions(options),
     queryClient,
   );
 };
