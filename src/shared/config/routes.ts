@@ -7,7 +7,6 @@ export const ROUTES = {
   dashboard: '/',
   profileCards: '/profile-cards',
   skills: '/skills',
-  skillCategories: '/skill-categories',
   interests: '/interests',
   jobTypes: '/job-types',
   personalities: '/personalities',

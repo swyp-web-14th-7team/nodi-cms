@@ -5,7 +5,6 @@ import { ProtectedRoute } from './protected-route'
 import { DashboardPage } from '../../pages/dashboard'
 import { ProfileCardsPage } from '../../pages/profile-cards'
 import { SkillsPage } from '../../pages/skills'
-import { SkillCategoriesPage } from '../../pages/skill-categories'
 import { InterestsPage } from '../../pages/interests'
 import { JobTypesPage } from '../../pages/job-types'
 import { PersonalitiesPage } from '../../pages/personalities'
@@ -33,7 +32,6 @@ export const router = createBrowserRouter([
           { path: ROUTES.dashboard, element: <DashboardPage /> },
           { path: ROUTES.profileCards, element: <ProfileCardsPage /> },
           { path: ROUTES.skills, element: <SkillsPage /> },
-          { path: ROUTES.skillCategories, element: <SkillCategoriesPage /> },
           { path: ROUTES.interests, element: <InterestsPage /> },
           { path: ROUTES.jobTypes, element: <JobTypesPage /> },
           { path: ROUTES.personalities, element: <PersonalitiesPage /> },

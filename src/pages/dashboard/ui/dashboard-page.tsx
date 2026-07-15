@@ -39,7 +39,7 @@ export function DashboardPage() {
     },
     {
       label: '스킬 카테고리',
-      to: ROUTES.skillCategories,
+      to: ROUTES.skills,
       value: skillCategories.data?.data.length,
       isLoading: skillCategories.isLoading,
     },

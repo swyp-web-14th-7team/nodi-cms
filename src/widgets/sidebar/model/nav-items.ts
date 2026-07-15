@@ -10,7 +10,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: '대시보드', to: ROUTES.dashboard },
   { label: '프로필 카드', to: ROUTES.profileCards },
   { label: '스킬', to: ROUTES.skills },
-  { label: '스킬 카테고리', to: ROUTES.skillCategories },
   { label: '관심사', to: ROUTES.interests },
   { label: '직무', to: ROUTES.jobTypes },
   { label: '성향', to: ROUTES.personalities },
