@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Button, Card, CardContent, CardHeader, Input } from '@heroui/react'
+import { Button, Input } from '@heroui/react'
 import {
   useSkillsControllerFindAll,
   useSkillsControllerCreate,
@@ -19,14 +19,17 @@ import type {
 } from '../../../shared/api/model'
 import {
   PageHeader,
+  DataTable,
   Modal,
   ConfirmDialog,
   FormField,
   NativeSelect,
+  PaginationBar,
+  type Column,
 } from '../../../shared/ui'
+import { useDebouncedValue } from '../../../shared/lib'
 
-// 스킬은 페이지네이션 API 이지만 카테고리별 그룹핑을 위해 한 번에 넉넉히 불러온다.
-const SKILL_FETCH_LIMIT = 200
+const LIMIT = 10
 
 interface SkillForm {
   name: string
@@ -35,53 +38,64 @@ interface SkillForm {
 
 export function SkillsPage() {
   const queryClient = useQueryClient()
-  const [search, setSearch] = useState('')
 
   const { data: categoriesData, isLoading: categoriesLoading } =
     useSkillCategoriesControllerFindAll()
-  const { data: skillsData, isLoading: skillsLoading } =
-    useSkillsControllerFindAll({ limit: SKILL_FETCH_LIMIT })
-
   const categories: SkillCategoryResponse[] = categoriesData?.data ?? []
-  const skills = useMemo<SkillResponse[]>(
-    () => skillsData?.data.items ?? [],
-    [skillsData],
-  )
+
+  // ── 선택된 카테고리(마스터) ──
+  // 사용자가 고른 값은 state 로, "실제 선택"은 렌더 중 파생한다.
+  // (state 를 effect 로 동기화하지 않아 목록 로드/삭제에도 자동으로 첫 항목으로 복구된다.)
+  const [selectedCatId, setSelectedCatId] = useState<number | null>(null)
+  const selectedCategory =
+    categories.find((c) => c.id === selectedCatId) ?? categories[0] ?? null
+  const effectiveCatId = selectedCategory?.id ?? null
+
+  // ── 스킬 목록(디테일): 선택 카테고리로 서버 조회 → 전체 캡 없음 ──
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search)
+
+  const { data: skillsData, isLoading: skillsLoading, isError: skillsError } =
+    useSkillsControllerFindAll(
+      {
+        page,
+        limit: LIMIT,
+        ...(effectiveCatId !== null ? { categoryId: effectiveCatId } : {}),
+        ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+      },
+      { query: { enabled: effectiveCatId !== null } },
+    )
+
+  const skills = skillsData?.data.items ?? []
+  const total = skillsData?.data.metadata?.total ?? 0
 
   const invalidateSkills = () =>
     queryClient.invalidateQueries({ queryKey: ['/skills'] })
-  const invalidateCategories = () => {
+  const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['/skill-categories'] })
     queryClient.invalidateQueries({ queryKey: ['/skills'] })
   }
 
-  // ── 카테고리 mutations ──
+  const selectCategory = (id: number) => {
+    setSelectedCatId(id)
+    setPage(1)
+    setSearch('')
+  }
+
+  // ── 카테고리 mutations & 모달 ──
   const catCreate = useSkillCategoriesControllerCreate({
-    mutation: { onSuccess: invalidateCategories },
+    mutation: { onSuccess: invalidateAll },
   })
   const catUpdate = useSkillCategoriesControllerUpdate({
-    mutation: { onSuccess: invalidateCategories },
+    mutation: { onSuccess: invalidateAll },
   })
   const catDelete = useSkillCategoriesControllerRemove({
-    mutation: { onSuccess: invalidateCategories },
+    mutation: { onSuccess: invalidateAll },
   })
   const catMutating =
     catCreate.isPending || catUpdate.isPending || catDelete.isPending
 
-  // ── 스킬 mutations ──
-  const skillCreate = useSkillsControllerCreate({
-    mutation: { onSuccess: invalidateSkills },
-  })
-  const skillUpdate = useSkillsControllerUpdate({
-    mutation: { onSuccess: invalidateSkills },
-  })
-  const skillDelete = useSkillsControllerRemove({
-    mutation: { onSuccess: invalidateSkills },
-  })
-  const skillMutating =
-    skillCreate.isPending || skillUpdate.isPending || skillDelete.isPending
-
-  // ── 카테고리 모달 상태 ──
   const [catEdit, setCatEdit] = useState<SkillCategoryResponse | 'new' | null>(
     null,
   )
@@ -100,9 +114,13 @@ export function SkillsPage() {
   const submitCat = async () => {
     const name = catName.trim()
     if (!name) return
-    if (catEdit === 'new') await catCreate.mutateAsync({ data: { name } })
-    else if (catEdit)
+    if (catEdit === 'new') {
+      const created = await catCreate.mutateAsync({ data: { name } })
+      const newId = created?.data?.id
+      if (typeof newId === 'number') setSelectedCatId(newId)
+    } else if (catEdit) {
       await catUpdate.mutateAsync({ id: catEdit.id, data: { name } })
+    }
     setCatEdit(null)
   }
   const confirmCatDelete = async () => {
@@ -111,7 +129,19 @@ export function SkillsPage() {
     setCatDeleteTarget(null)
   }
 
-  // ── 스킬 모달 상태 ──
+  // ── 스킬 mutations & 모달 ──
+  const skillCreate = useSkillsControllerCreate({
+    mutation: { onSuccess: invalidateSkills },
+  })
+  const skillUpdate = useSkillsControllerUpdate({
+    mutation: { onSuccess: invalidateSkills },
+  })
+  const skillDelete = useSkillsControllerRemove({
+    mutation: { onSuccess: invalidateSkills },
+  })
+  const skillMutating =
+    skillCreate.isPending || skillUpdate.isPending || skillDelete.isPending
+
   const [skillEdit, setSkillEdit] = useState<SkillResponse | 'new' | null>(null)
   const [skillForm, setSkillForm] = useState<SkillForm>({
     name: '',
@@ -120,8 +150,8 @@ export function SkillsPage() {
   const [skillDeleteTarget, setSkillDeleteTarget] =
     useState<SkillResponse | null>(null)
 
-  const openSkillCreate = (categoryId: number) => {
-    setSkillForm({ name: '', categoryId })
+  const openSkillCreate = () => {
+    setSkillForm({ name: '', categoryId: effectiveCatId ?? '' })
     setSkillEdit('new')
   }
   const openSkillEdit = (s: SkillResponse) => {
@@ -143,145 +173,156 @@ export function SkillsPage() {
     setSkillDeleteTarget(null)
   }
 
-  // ── 검색 필터 + 카테고리별 그룹핑 ──
-  const keyword = search.trim().toLowerCase()
-  const skillsByCategory = useMemo(() => {
-    const map = new Map<number, SkillResponse[]>()
-    for (const skill of skills) {
-      if (keyword && !skill.name.toLowerCase().includes(keyword)) continue
-      const list = map.get(skill.category.id) ?? []
-      list.push(skill)
-      map.set(skill.category.id, list)
-    }
-    return map
-  }, [skills, keyword])
+  const columns: Column<SkillResponse>[] = [
+    { key: 'id', header: 'ID', render: (s) => s.id, className: 'w-16 text-muted' },
+    { key: 'name', header: '이름', render: (s) => s.name },
+    {
+      key: 'actions',
+      header: '',
+      className: 'w-40 text-right',
+      render: (skill) => (
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onPress={() => openSkillEdit(skill)}>
+            수정
+          </Button>
+          <Button
+            size="sm"
+            variant="danger-soft"
+            onPress={() => setSkillDeleteTarget(skill)}
+          >
+            삭제
+          </Button>
+        </div>
+      ),
+    },
+  ]
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         title="스킬"
-        description="카테고리와 카테고리별 스킬을 함께 관리합니다."
+        description="왼쪽에서 카테고리를 선택하고, 오른쪽에서 해당 스킬을 관리합니다."
       />
 
-      {/* 상단: 카테고리 관리 */}
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <h2 className="text-base font-medium text-foreground">
-            스킬 카테고리
-          </h2>
-          <Button size="sm" variant="primary" onPress={openCatCreate}>
-            카테고리 추가
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {categoriesLoading ? (
-            <p className="text-sm text-muted">불러오는 중…</p>
-          ) : categories.length === 0 ? (
-            <p className="text-sm text-muted">등록된 카테고리가 없습니다.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {categories.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center gap-2 rounded-md border border-divider bg-content2 py-1 pl-3 pr-1.5 text-sm"
-                >
-                  <span className="text-foreground">{c.name}</span>
-                  <span className="text-muted">
-                    ({skills.filter((s) => s.category.id === c.id).length})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => openCatEdit(c)}
-                    className="rounded px-1 text-xs text-muted hover:text-foreground"
-                  >
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCatDeleteTarget(c)}
-                    className="rounded px-1 text-xs text-danger hover:opacity-70"
-                  >
-                    삭제
-                  </button>
-                </div>
-              ))}
+      <div className="flex flex-col gap-4 md:flex-row md:items-start">
+        {/* 마스터: 카테고리 */}
+        <aside className="w-full shrink-0 md:w-64">
+          <div className="rounded-lg border border-divider">
+            <div className="flex items-center justify-between border-b border-divider px-3 py-2">
+              <span className="text-sm font-medium text-foreground">
+                카테고리
+              </span>
+              <Button size="sm" variant="primary" onPress={openCatCreate}>
+                추가
+              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 하단: 카테고리별 스킬 */}
-      <div className="flex flex-col gap-3">
-        <Input
-          type="search"
-          placeholder="스킬 이름으로 검색"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-
-        {skillsLoading ? (
-          <p className="text-sm text-muted">불러오는 중…</p>
-        ) : categories.length === 0 ? (
-          <p className="text-sm text-muted">
-            먼저 카테고리를 추가하면 스킬을 등록할 수 있습니다.
-          </p>
-        ) : (
-          categories.map((category) => {
-            const list = skillsByCategory.get(category.id) ?? []
-            return (
-              <Card key={category.id}>
-                <CardHeader className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-foreground">
-                    {category.name}
-                    <span className="ml-2 text-muted">{list.length}개</span>
-                  </h3>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onPress={() => openSkillCreate(category.id)}
-                  >
-                    스킬 추가
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {list.length === 0 ? (
-                    <p className="text-sm text-muted">
-                      {keyword
-                        ? '검색 결과가 없습니다.'
-                        : '등록된 스킬이 없습니다.'}
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {list.map((skill) => (
-                        <div
-                          key={skill.id}
-                          className="flex items-center gap-2 rounded-md border border-divider py-1 pl-3 pr-1.5 text-sm"
+            {categoriesLoading ? (
+              <p className="px-3 py-4 text-sm text-muted">불러오는 중…</p>
+            ) : categories.length === 0 ? (
+              <p className="px-3 py-4 text-sm text-muted">
+                카테고리를 추가하세요.
+              </p>
+            ) : (
+              <ul className="p-1.5">
+                {categories.map((c) => {
+                  const active = c.id === effectiveCatId
+                  return (
+                    <li key={c.id}>
+                      <div
+                        className={`group flex items-center gap-1 rounded-md border-l-[3px] py-1.5 pr-2 pl-2 text-sm transition-colors ${
+                          active
+                            ? 'border-primary bg-primary/10 font-semibold text-primary'
+                            : 'border-transparent text-foreground/80 hover:bg-content2'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => selectCategory(c.id)}
+                          className="flex flex-1 items-center gap-1.5 truncate text-left"
                         >
-                          <span className="text-foreground">{skill.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => openSkillEdit(skill)}
-                            className="rounded px-1 text-xs text-muted hover:text-foreground"
+                          <span
+                            aria-hidden
+                            className={
+                              active ? 'text-primary' : 'text-transparent'
+                            }
                           >
-                            수정
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSkillDeleteTarget(skill)}
-                            className="rounded px-1 text-xs text-danger hover:opacity-70"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )
-          })
-        )}
+                            ▸
+                          </span>
+                          {c.name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openCatEdit(c)}
+                          className="rounded px-1 text-xs text-muted opacity-0 hover:text-foreground group-hover:opacity-100"
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCatDeleteTarget(c)}
+                          className="rounded px-1 text-xs text-danger opacity-0 hover:opacity-70 group-hover:opacity-100"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        </aside>
+
+        {/* 디테일: 선택 카테고리의 스킬 */}
+        <section className="flex min-w-0 flex-1 flex-col gap-3">
+          {selectedCategory === null ? (
+            <div className="rounded-lg border border-divider px-4 py-16 text-center text-sm text-muted">
+              {categories.length === 0
+                ? '먼저 카테고리를 추가하면 스킬을 관리할 수 있습니다.'
+                : '카테고리를 선택하세요.'}
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="truncate text-lg font-semibold text-foreground">
+                  {selectedCategory.name}
+                </h2>
+                <Button variant="primary" onPress={openSkillCreate}>
+                  스킬 추가
+                </Button>
+              </div>
+
+              <Input
+                type="search"
+                placeholder="이 카테고리에서 스킬 검색"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setPage(1)
+                }}
+                className="max-w-xs"
+              />
+
+              <DataTable
+                columns={columns}
+                items={skills}
+                rowKey={(s) => s.id}
+                isLoading={skillsLoading}
+                isError={skillsError}
+                emptyMessage="이 카테고리에 등록된 스킬이 없습니다."
+              />
+
+              {total > 0 && (
+                <PaginationBar
+                  page={page}
+                  total={total}
+                  limit={LIMIT}
+                  onPageChange={setPage}
+                />
+              )}
+            </>
+          )}
+        </section>
       </div>
 
       {/* 카테고리 생성/수정 모달 */}
