@@ -1,13 +1,17 @@
 import { ThemeToggle } from '../../../features/theme'
+import { MeMenu } from '../../../features/me'
 
 export function Header() {
   return (
-    <header className="h-16 shrink-0 border-b border-divider flex items-center justify-between px-6">
+    <header className="h-16 shrink-0 border-b border-border flex items-center justify-between px-6">
       <div className="flex items-center gap-2 text-foreground">
         <NodiMark />
         <span className="text-xl font-bold tracking-tight">NODI</span>
       </div>
-      <ThemeToggle />
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
+        <MeMenu />
+      </div>
     </header>
   )
 }

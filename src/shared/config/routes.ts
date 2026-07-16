@@ -5,12 +5,10 @@ export const ROUTES = {
   authCallback: '/auth/:provider/callback',
   forbidden: '/forbidden',
   dashboard: '/',
-  profileCards: '/profile-cards',
   skills: '/skills',
   interests: '/interests',
   jobTypes: '/job-types',
   personalities: '/personalities',
   purposes: '/purposes',
   affiliationStatuses: '/affiliation-statuses',
-  users: '/users',
 } as const

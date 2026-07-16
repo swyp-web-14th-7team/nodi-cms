@@ -1,6 +1,5 @@
 import { Card, CardContent } from '@heroui/react'
 import { Link } from 'react-router-dom'
-import { useProfileCardsControllerGetProfileCards } from '../../../shared/api/endpoints/profile-cards/profile-cards'
 import { useSkillsControllerFindAll } from '../../../shared/api/endpoints/skills/skills'
 import { useInterestsControllerFindAll } from '../../../shared/api/endpoints/interests/interests'
 import { useJobTypeControllerFindAll } from '../../../shared/api/endpoints/job-type/job-type'
@@ -10,7 +9,6 @@ import { ROUTES } from '../../../shared/config'
 
 export function DashboardPage() {
   // total 만 필요하므로 limit=1 로 가볍게 조회한다.
-  const profileCards = useProfileCardsControllerGetProfileCards({ limit: 1 })
   const skills = useSkillsControllerFindAll({ limit: 1 })
   const interests = useInterestsControllerFindAll({ limit: 1 })
   const jobTypes = useJobTypeControllerFindAll({ limit: 1 })
@@ -18,13 +16,7 @@ export function DashboardPage() {
 
   const stats = [
     {
-      label: '프로필 카드',
-      to: ROUTES.profileCards,
-      value: profileCards.data?.data.metadata?.total,
-      isLoading: profileCards.isLoading,
-    },
-    {
-      label: '스킬',
+      label: '스킬 태그',
       to: ROUTES.skills,
       value: skills.data?.data.metadata?.total,
       isLoading: skills.isLoading,
@@ -36,7 +28,7 @@ export function DashboardPage() {
       isLoading: skillCategories.isLoading,
     },
     {
-      label: '관심사',
+      label: '관심분야 태그',
       to: ROUTES.interests,
       value: interests.data?.data.metadata?.total,
       isLoading: interests.isLoading,
@@ -59,13 +51,11 @@ export function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {stats.map((stat) => (
           <Link key={stat.label} to={stat.to}>
-            <Card className="transition-colors hover:border-primary">
+            <Card className="transition-colors hover:border-accent">
               <CardContent className="flex flex-col gap-1 py-5">
                 <span className="text-sm text-muted">{stat.label}</span>
                 <span className="text-3xl font-semibold text-foreground">
-                  {stat.isLoading
-                    ? '…'
-                    : (stat.value?.toLocaleString() ?? '-')}
+                  {stat.isLoading ? '…' : (stat.value?.toLocaleString() ?? '-')}
                 </span>
               </CardContent>
             </Card>
