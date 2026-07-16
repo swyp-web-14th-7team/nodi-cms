@@ -60,7 +60,7 @@ export function TagInput({
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={onKeyDown}
       onBlur={onEscape}
-      className="rounded-lg border border-primary bg-content1 px-3.5 py-2 text-[15px] text-foreground outline-none placeholder:text-muted"
+      className="rounded-lg border border-accent bg-surface px-3.5 py-2 text-[15px] text-foreground outline-none placeholder:text-muted"
     />
   )
 }

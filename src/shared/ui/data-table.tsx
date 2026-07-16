@@ -27,10 +27,10 @@ export function DataTable<T>({
   emptyMessage = '데이터가 없습니다.',
 }: DataTableProps<T>) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-divider">
+    <div className="overflow-x-auto rounded-lg border border-border">
       <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b border-divider bg-content2 text-left text-muted">
+          <tr className="border-b border-border bg-surface-secondary text-left text-muted">
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -54,7 +54,7 @@ export function DataTable<T>({
             items.map((item) => (
               <tr
                 key={rowKey(item)}
-                className="border-b border-divider last:border-b-0 hover:bg-content2/50"
+                className="border-b border-border last:border-b-0 hover:bg-surface-secondary/50"
               >
                 {columns.map((col) => (
                   <td

@@ -156,7 +156,7 @@ export function NameCrudManager({
       )}
 
       {/* 인라인 추가 */}
-      <div className="flex items-center gap-2 rounded-lg border border-divider bg-content2/50 p-2">
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-secondary/50 p-2">
         <Input
           value={addName}
           onChange={(e) => setAddName(e.target.value)}

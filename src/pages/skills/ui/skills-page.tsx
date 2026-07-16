@@ -274,7 +274,7 @@ export function SkillsPage() {
                   추가하기
                 </PillButton>
               </div>
-              <div className="border-t border-divider" />
+              <div className="border-t border-border" />
             </section>
           )
         })}

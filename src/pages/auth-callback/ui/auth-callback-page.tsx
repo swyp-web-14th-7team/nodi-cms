@@ -63,7 +63,7 @@ export function AuthCallbackPage() {
         <div className="flex flex-col items-center gap-3">
           <p className="text-sm text-danger">{errorMessage}</p>
           <button
-            className="text-sm text-primary underline"
+            className="text-sm text-accent underline"
             onClick={() => navigate(ROUTES.login, { replace: true })}
           >
             로그인으로 돌아가기

@@ -32,8 +32,8 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
         onClick={onClose}
         aria-hidden
       />
-      <div className="relative z-10 w-full max-w-md rounded-lg border border-divider bg-content1 shadow-xl">
-        <div className="flex items-center justify-between border-b border-divider px-5 py-3">
+      <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-surface shadow-xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <h2 className="text-base font-medium text-foreground">{title}</h2>
           <button
             type="button"
@@ -46,7 +46,7 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
         </div>
         <div className="px-5 py-4">{children}</div>
         {footer && (
-          <div className="flex justify-end gap-2 border-t border-divider px-5 py-3">
+          <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
             {footer}
           </div>
         )}

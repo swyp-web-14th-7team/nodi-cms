@@ -15,7 +15,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 shrink-0 border-r border-divider flex flex-col">
+    <aside className="w-64 shrink-0 border-r border-border flex flex-col">
       <div className="flex items-center gap-2 px-5 py-5 text-foreground">
         <GearIcon />
         <span className="text-base font-semibold">관리자 페이지</span>
@@ -32,8 +32,8 @@ export function Sidebar() {
                   [
                     'block rounded-lg px-4 py-2.5 text-[15px] transition-colors',
                     isActive
-                      ? 'bg-content2 font-semibold text-foreground'
-                      : 'text-muted hover:bg-content2/50 hover:text-foreground',
+                      ? 'bg-surface-secondary font-semibold text-foreground'
+                      : 'text-muted hover:bg-surface-secondary/50 hover:text-foreground',
                   ].join(' ')
                 }
               >
@@ -49,7 +49,7 @@ export function Sidebar() {
           type="button"
           onClick={onLogout}
           disabled={loggingOut}
-          className="w-full rounded-lg px-4 py-2.5 text-left text-[15px] text-muted transition-colors hover:bg-content2/50 hover:text-foreground disabled:opacity-60"
+          className="w-full rounded-lg px-4 py-2.5 text-left text-[15px] text-muted transition-colors hover:bg-surface-secondary/50 hover:text-foreground disabled:opacity-60"
         >
           {loggingOut ? '로그아웃 중…' : '로그아웃'}
         </button>

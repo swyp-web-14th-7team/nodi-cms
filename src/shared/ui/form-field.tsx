@@ -26,7 +26,7 @@ export function NativeSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
       {...rest}
-      className={`h-10 w-full rounded-md border border-divider bg-content1 px-3 text-sm text-foreground outline-none transition-colors focus:border-primary ${className ?? ''}`}
+      className={`h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground outline-none transition-colors focus:border-accent ${className ?? ''}`}
     />
   )
 }

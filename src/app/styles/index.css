@@ -13,18 +13,36 @@
 @source '../../**/*.{ts,tsx}';
 
 /*
- * 테마 토글 스위치(features/theme)의 색.
+ * accent 재정의.
  *
- * HeroUI 기본 accent 는 파란색이라 이 CMS 팔레트에 없는 색이다. 무채색으로 덮는다.
- * 스위치 내부는 accent 계열만 참조한다:
- *   켜짐 배경=--accent / thumb 배경=--accent-foreground / 아이콘=--accent
- *   켜짐 hover=--accent-hover / 포커스 링=--focus
+ * HeroUI 기본 accent 는 파란색인데 이 CMS 팔레트엔 없는 색이라, 시안의 알약
+ * 버튼과 같은 톤(surface-secondary)으로 덮는다. accent 는 primary 버튼뿐 아니라
+ * 링크·체크박스·탭 등 HeroUI 컴포넌트 대부분이 참조하므로, 여기 한 곳만 바꾸면
+ * 앱 전역의 파란색이 사라진다.
  *
- * ⚠️ --accent-hover 와 --focus 는 :root(=<html>) 에서 var(--accent) 를 참조해 정의된다.
- * 커스텀 프로퍼티는 "선언된 엘리먼트"에서 값이 확정된 뒤 상속되므로, 하위에서 --accent
- * 만 덮으면 이 둘은 이미 파랗게 굳은 값이 그대로 내려온다. 파생 토큰도 함께 덮는 이유다.
+ * --accent-hover 는 :root 에서 var(--accent) 를 참조해 정의된다. 커스텀 프로퍼티는
+ * "선언된 엘리먼트"에서 값이 확정된 뒤 상속되므로, 같은 :root 에서 --accent 를 덮으면
+ * --accent-hover 도 새 값 기준으로 다시 계산된다(하위 엘리먼트에서 덮을 때와 다르다).
  *
- * 테마 토큰(foreground/background)만 쓰므로 라이트·다크 양쪽에서 대비가 유지된다.
+ * --focus 는 별도로 지정한다. 그냥 두면 var(--accent) = surface-secondary 라
+ * 포커스 링이 배경과 거의 같은 색이 되어 키보드 탐색 시 안 보인다.
+ */
+:root {
+  --accent: var(--surface-secondary);
+  --accent-foreground: var(--foreground);
+  --focus: var(--muted);
+}
+
+/*
+ * 테마 토글 스위치(features/theme)만 예외.
+ *
+ * 스위치는 켜짐/꺼짐이 색으로 읽혀야 하는데, 전역 accent(surface-secondary)는
+ * 배경과 명도차가 작아 항상 꺼진 것처럼 보인다. 이 스위치 안에서만 대비가 큰
+ * foreground/background 로 다시 덮는다.
+ *
+ * ⚠️ 여기서는 --accent-hover 도 반드시 함께 덮어야 한다. 위 :root 설명대로
+ * --accent-hover 는 이미 :root 에서 값이 확정돼 내려오므로, 하위인 이 클래스에서
+ * --accent 만 바꿔봐야 hover 색은 따라오지 않는다.
  */
 .theme-switch {
   --accent: var(--foreground);
@@ -34,5 +52,4 @@
     var(--foreground) 88%,
     var(--background) 12%
   );
-  --focus: var(--muted);
 }
