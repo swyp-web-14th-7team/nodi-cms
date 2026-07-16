@@ -3,12 +3,15 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.2.2
  */
+import type { JobTypeResponse } from "./jobTypeResponse";
 import type { SkillCategoryResponse } from "./skillCategoryResponse";
 
 export interface SkillResponse {
   id: number;
   name: string;
   category: SkillCategoryResponse;
+  /** 이 스킬이 속한 직군 */
+  jobTypes: JobTypeResponse[];
 }

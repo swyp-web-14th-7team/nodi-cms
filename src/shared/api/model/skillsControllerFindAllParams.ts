@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.2.2
  */
 import type { SkillsControllerFindAllOrder } from "./skillsControllerFindAllOrder";
 import type { SkillsControllerFindAllSort } from "./skillsControllerFindAllSort";
@@ -28,6 +28,11 @@ export type SkillsControllerFindAllParams = {
    * @minimum 1
    */
   categoryId?: number;
+  /**
+   * 직군 ID 로 필터 (해당 직군에 매핑된 스킬만, 생략 시 전체 조회)
+   * @minimum 1
+   */
+  jobTypeId?: number;
   /**
    * name 검색어 (부분 일치)
    */

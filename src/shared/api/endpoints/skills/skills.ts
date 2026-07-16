@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.2.2
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -55,7 +55,8 @@ const withQueryKey = <T extends object, K>(
 };
 
 /**
- * categoryId 를 넘기면 해당 카테고리의 skill 만, search 를 넘기면 name 부분 일치로 필터링합니다. (생략 시 전체)
+ * categoryId 를 넘기면 해당 카테고리의 skill 만, jobTypeId 를 넘기면 해당 직군에 매핑된 skill 만,
+ * search 를 넘기면 name 부분 일치로 필터링합니다. (생략 시 전체, 여러 개를 함께 넘기면 AND)
  *
  * sort 는 id·name 만 허용하며 기본값은 name 입니다.
  * @summary skill 목록 조회
@@ -221,6 +222,8 @@ export function useSkillsControllerFindAll<
 }
 
 /**
+ * jobTypeIds 로 이 스킬이 속한 직군을 함께 지정합니다. 빈 배열은 허용하지 않으며,
+ * 전 직군 공통 스킬이면 모든 직군 ID 를 넣습니다.
  * @summary skill 생성 (ADMIN)
  */
 export const skillsControllerCreate = (
@@ -313,6 +316,8 @@ export const useSkillsControllerCreate = <
   );
 };
 /**
+ * 넘긴 필드만 수정합니다. jobTypeIds 를 넘기면 직군 매핑을 그 목록으로 통째로 교체하고,
+ * 생략하면 기존 매핑을 그대로 둡니다.
  * @summary skill 수정 (ADMIN)
  */
 export const skillsControllerUpdate = (

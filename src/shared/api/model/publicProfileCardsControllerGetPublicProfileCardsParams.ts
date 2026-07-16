@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.2.2
  */
 import type { PublicProfileCardsControllerGetPublicProfileCardsOrder } from "./publicProfileCardsControllerGetPublicProfileCardsOrder";
 import type { PublicProfileCardsControllerGetPublicProfileCardsSort } from "./publicProfileCardsControllerGetPublicProfileCardsSort";
@@ -39,7 +39,7 @@ export type PublicProfileCardsControllerGetPublicProfileCardsParams = {
    */
   affiliationStatusId?: number;
   /**
-   * 검색 키워드
+   * 검색 키워드 (닉네임 / 관심사 이름)
    */
   keywords?: string;
 };

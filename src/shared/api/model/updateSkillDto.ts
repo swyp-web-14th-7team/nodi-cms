@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.2.2
  */
 
 export interface UpdateSkillDto {
@@ -17,4 +17,10 @@ export interface UpdateSkillDto {
    * @minimum 1
    */
   categoryId?: number;
+  /**
+   * 이 스킬이 속한 직군 ID 목록. 전 직군 공통 스킬이면 모든 직군 ID 를 넣습니다. (빈 배열 불가 — 매핑이 없는 상태는 "아직 지정하지 않음" 과 구분되지 않습니다)
+   * @minItems 1
+   * @items.minimum 1
+   */
+  jobTypeIds?: number[];
 }

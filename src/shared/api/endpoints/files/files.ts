@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.2.2
  */
 import { useMutation } from "@tanstack/react-query";
 import type {
@@ -14,9 +14,9 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  FilesControllerUploadPersonalityImage200,
   FilesControllerUploadProfileImage200,
   UploadImageDto,
-  UploadImageResponse,
 } from "../../model";
 
 import { customInstance } from "../../http-client";
@@ -128,12 +128,33 @@ export const useFilesControllerUploadProfileImage = <
     queryClient,
   );
 };
+/**
+ * 이미지 1장(png/jpg/webp, 최대 5MB)을 `multipart/form-data` 의 `file` 필드로 받는다.
+ *
+ * 업로드 시 아래 2개 객체가 `personality/{YYYY}/{mm}/{uuid}/` 하위에 저장된다.
+ * - `origin.webp` : 원본(리사이즈 없이 webp 변환만)
+ * - `36.webp` : 36x36 정사각 cover 크롭 파생본
+ *
+ * 응답 `url` 은 uuid 까지의 base URL 이며, 실제 이미지는 뒤에 파일명을 붙여 접근한다.
+ * 예) `${url}/origin.webp`, `${url}/36.webp`
+ * @summary 개성(personality) 이미지 업로드 (ADMIN)
+ */
 export const filesControllerUploadPersonalityImage = (
+  uploadImageDto: BodyType<UploadImageDto>,
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal,
 ) => {
-  return customInstance<UploadImageResponse>(
-    { url: `/files/personality-image/upload`, method: "POST", signal },
+  const formData = new FormData();
+  formData.append(`file`, uploadImageDto.file);
+
+  return customInstance<FilesControllerUploadPersonalityImage200>(
+    {
+      url: `/files/personality-image/upload`,
+      method: "POST",
+      headers: { "Content-Type": "multipart/form-data" },
+      data: formData,
+      signal,
+    },
     options,
   );
 };
@@ -145,14 +166,14 @@ export const getFilesControllerUploadPersonalityImageMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
     TError,
-    void,
+    { data: BodyType<UploadImageDto> },
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
   TError,
-  void,
+  { data: BodyType<UploadImageDto> },
   TContext
 > => {
   const mutationKey = ["filesControllerUploadPersonalityImage"];
@@ -166,9 +187,11 @@ export const getFilesControllerUploadPersonalityImageMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
-    void
-  > = () => {
-    return filesControllerUploadPersonalityImage(requestOptions);
+    { data: BodyType<UploadImageDto> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return filesControllerUploadPersonalityImage(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -177,10 +200,14 @@ export const getFilesControllerUploadPersonalityImageMutationOptions = <
 export type FilesControllerUploadPersonalityImageMutationResult = NonNullable<
   Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>
 >;
-
+export type FilesControllerUploadPersonalityImageMutationBody =
+  BodyType<UploadImageDto>;
 export type FilesControllerUploadPersonalityImageMutationError =
   ErrorType<void>;
 
+/**
+ * @summary 개성(personality) 이미지 업로드 (ADMIN)
+ */
 export const useFilesControllerUploadPersonalityImage = <
   TError = ErrorType<void>,
   TContext = unknown,
@@ -189,7 +216,7 @@ export const useFilesControllerUploadPersonalityImage = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
       TError,
-      void,
+      { data: BodyType<UploadImageDto> },
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -198,7 +225,7 @@ export const useFilesControllerUploadPersonalityImage = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof filesControllerUploadPersonalityImage>>,
   TError,
-  void,
+  { data: BodyType<UploadImageDto> },
   TContext
 > => {
   return useMutation(

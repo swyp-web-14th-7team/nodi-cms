@@ -3,25 +3,32 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.2.2
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { UsersControllerGetMe200 } from "../../model";
+import type {
+  UpdateProfileDto,
+  UsersControllerGetMe200,
+  UsersControllerUpdateMe200,
+} from "../../model";
 
 import { customInstance } from "../../http-client";
-import type { ErrorType } from "../../http-client";
+import type { ErrorType, BodyType } from "../../http-client";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
@@ -195,3 +202,97 @@ export function useUsersControllerGetMe<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+/**
+ * nickname 의 길이는 1 ~ 255 입니다.
+ * @summary 유저 정보 업데이트
+ */
+export const usersControllerUpdateMe = (
+  updateProfileDto: BodyType<UpdateProfileDto>,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal,
+) => {
+  return customInstance<UsersControllerUpdateMe200>(
+    {
+      url: `/users/me`,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      data: updateProfileDto,
+      signal,
+    },
+    options,
+  );
+};
+
+export const getUsersControllerUpdateMeMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof usersControllerUpdateMe>>,
+    TError,
+    { data: BodyType<UpdateProfileDto> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof usersControllerUpdateMe>>,
+  TError,
+  { data: BodyType<UpdateProfileDto> },
+  TContext
+> => {
+  const mutationKey = ["usersControllerUpdateMe"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof usersControllerUpdateMe>>,
+    { data: BodyType<UpdateProfileDto> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return usersControllerUpdateMe(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UsersControllerUpdateMeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof usersControllerUpdateMe>>
+>;
+export type UsersControllerUpdateMeMutationBody = BodyType<UpdateProfileDto>;
+export type UsersControllerUpdateMeMutationError = ErrorType<void>;
+
+/**
+ * @summary 유저 정보 업데이트
+ */
+export const useUsersControllerUpdateMe = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof usersControllerUpdateMe>>,
+      TError,
+      { data: BodyType<UpdateProfileDto> },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof usersControllerUpdateMe>>,
+  TError,
+  { data: BodyType<UpdateProfileDto> },
+  TContext
+> => {
+  return useMutation(
+    getUsersControllerUpdateMeMutationOptions(options),
+    queryClient,
+  );
+};

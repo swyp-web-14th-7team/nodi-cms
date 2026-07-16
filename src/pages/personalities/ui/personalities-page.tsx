@@ -21,7 +21,6 @@ import type {
   PersonalitiesControllerFindAllParams,
   CreatePersonalityDto,
   JobTypeResponse,
-  UploadImageResponse,
 } from '../../../shared/api/model'
 import { PageHeader, NativeSelect, PaginationBar } from '../../../shared/ui'
 import { useDebouncedValue, useUndoableDelete } from '../../../shared/lib'
@@ -84,19 +83,10 @@ export function PersonalitiesPage() {
     deleteMut.mutateAsync({ id: String(id) }),
   )
 
-  // 이미지 업로드(멀티파트 FormData 직접 주입)
-  //
-  // ⚠️ orval 이 이 엔드포인트만 반환 타입을 알맹이(UploadImageResponse)로 잘못 생성한다.
-  // 스펙상 응답은 다른 엔드포인트와 똑같은 봉투(ResponseSuccess & { data }) 이고,
-  // 같은 파일의 profile-image 업로드는 봉투 타입으로 제대로 생성돼 있다(스펙은 양쪽이 동일).
-  // 타입을 곧이곧대로 믿고 res.url 을 읽으면 undefined 가 되므로 여기서 바로잡는다.
+  // 이미지 업로드. multipart FormData 구성과 봉투 타입 모두 orval 이 생성해준다.
   const uploadMut = useMutation({
     mutationFn: async (file: File) => {
-      const form = new FormData()
-      form.append('file', file)
-      const res = (await filesControllerUploadPersonalityImage({
-        data: form,
-      })) as unknown as { data: UploadImageResponse }
+      const res = await filesControllerUploadPersonalityImage({ file })
       return res.data
     },
   })
