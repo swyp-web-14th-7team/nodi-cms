@@ -4,7 +4,20 @@ import { NAV_ITEMS } from '../model/nav-items'
 import { logout } from '../../../entities/session'
 import { ROUTES } from '../../../shared/config'
 
-export function Sidebar() {
+/**
+ * 좌측 네비게이션. 펼쳐져 있을 때만 렌더된다(여닫는 판단은 CmsLayout 이 한다).
+ *
+ * isOverlay 면 본문을 밀어내는 대신 그 위에 덮는 서랍이 된다. 좁은 화면에서
+ * 256px 를 밀어내면 본문이 짜부라지기 때문이다.
+ */
+export function Sidebar({
+  isOverlay = false,
+  onNavigate,
+}: {
+  isOverlay?: boolean
+  /** 네비 항목을 눌렀을 때. 서랍 모드면 여기서 접는다. */
+  onNavigate?: () => void
+}) {
   const navigate = useNavigate()
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -15,7 +28,14 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 shrink-0 border-r border-border flex flex-col">
+    <aside
+      className={[
+        'w-64 border-r border-border flex flex-col',
+        isOverlay
+          ? 'absolute inset-y-0 left-0 z-40 bg-background shadow-xl'
+          : 'shrink-0',
+      ].join(' ')}
+    >
       <div className="flex items-center gap-2 px-5 py-5 text-foreground">
         <GearIcon />
         <span className="text-base font-semibold">관리자 페이지</span>
@@ -28,6 +48,7 @@ export function Sidebar() {
               <NavLink
                 to={item.to}
                 end={item.to === '/'}
+                onClick={onNavigate}
                 className={({ isActive }) =>
                   [
                     'block rounded-lg px-4 py-2.5 text-[15px] transition-colors',
