@@ -1,8 +1,10 @@
 import { useCallback, useState, type ReactNode } from 'react'
-import { useQueries, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query'
+import { toast } from '@heroui/react'
 import {
+  skillsControllerCreate,
   skillsControllerFindAll,
-  useSkillsControllerCreate,
+  skillsControllerUpdate,
   useSkillsControllerUpdate,
   useSkillsControllerRemove,
 } from '../../../shared/api/endpoints/skills/skills'
@@ -55,6 +57,36 @@ const fetchSkillsOfCategory = async (
     if (pageItems.length === 0 || items.length >= total) break
   }
   return items
+}
+
+/**
+ * 이름이 정확히 같은 스킬을 카테고리와 무관하게 찾는다. 없으면 null.
+ *
+ * 스킬 이름은 전역 고유라 같은 이름을 또 만들 수 없다. 그래서 추가할 때 먼저 훑어보고
+ * 이미 있으면 만드는 대신 직군만 이어붙인다.
+ *
+ * ⚠️ search 는 부분 일치라 "Git" 으로 GitLab·GitHub 까지 딸려온다. 결과에서 이름이
+ * 정확히 같은 것을 직접 골라내야 한다. 서버가 대소문자를 가리지 않으므로
+ * ("figma" 로도 "Figma" 가 잡힌다) 비교도 소문자로 맞춘다.
+ */
+const findSkillByExactName = async (name: string) => {
+  const target = name.toLowerCase()
+  let fetched = 0
+  for (let page = 1; ; page += 1) {
+    const res = await skillsControllerFindAll({
+      search: name,
+      page,
+      limit: SKILL_PAGE_SIZE,
+    })
+    // 명시적 주석은 생략 불가. PaginationType.items 가 unknown[][] 이라 교차 타입에서
+    // find 콜백 인자가 unknown[] 으로 잡힌다(다른 화면들도 같은 이유로 타입을 박아 쓴다).
+    const items: SkillResponse[] = res.data.items ?? []
+    const hit = items.find((s) => s.name.toLowerCase() === target)
+    if (hit) return hit
+    fetched += items.length
+    const total = res.data.metadata?.total ?? fetched
+    if (items.length === 0 || fetched >= total) return null
+  }
 }
 
 // 팝오버가 붙은 대상. 카테고리의 추가 버튼이거나, 특정 스킬 칩이다.
@@ -120,9 +152,51 @@ export function SkillsPage() {
     catDelete.mutateAsync({ id }),
   )
 
-  const skillCreate = useSkillsControllerCreate({
-    mutation: { onSuccess: invalidateSkills },
+  /**
+   * 스킬 추가. 같은 이름이 이미 있으면 새로 만들지 않고 직군만 이어붙인다.
+   * (이름이 전역 고유라 중복 생성은 어차피 서버가 막는다)
+   */
+  const skillAdd = useMutation({
+    mutationFn: async ({
+      name,
+      categoryId,
+      jobTypeIds,
+    }: SkillEditorValues & { categoryId: number }) => {
+      const existing = await findSkillByExactName(name)
+      if (!existing) {
+        await skillsControllerCreate({ name, categoryId, jobTypeIds })
+        return { kind: 'created' as const, skill: null }
+      }
+
+      const existingIds = existing.jobTypes.map((jt) => jt.id)
+      const merged = [...new Set([...existingIds, ...jobTypeIds])]
+      // 고른 직군이 이미 다 붙어 있으면 보낼 게 없다.
+      if (merged.length === existingIds.length) {
+        return { kind: 'unchanged' as const, skill: existing }
+      }
+      await skillsControllerUpdate(existing.id, { jobTypeIds: merged })
+      return { kind: 'linked' as const, skill: existing }
+    },
+    onSuccess: (res, vars) => {
+      invalidateSkills()
+      if (res.kind === 'created') return
+      // 이어붙인 결과는 화면에 안 보일 수 있다(다른 카테고리에 있거나 필터에 걸려서).
+      // 아무 일도 안 일어난 것처럼 보이지 않게 토스트로 알린다.
+      const { skill } = res
+      // 다른 카테고리에 있던 거라면 어디 있는지 짚어준다(추가한 자리에 안 나타나니까).
+      const description =
+        skill.category.id === vars.categoryId
+          ? undefined
+          : `'${skill.category.name}' 카테고리에 있습니다.`
+      toast(
+        res.kind === 'linked'
+          ? `"${skill.name}" 은(는) 이미 있어 직군만 연결했습니다.`
+          : `"${skill.name}" 은(는) 이미 그 직군에 연결돼 있습니다.`,
+        { description },
+      )
+    },
   })
+
   const skillUpdate = useSkillsControllerUpdate({
     mutation: { onSuccess: invalidateSkills },
   })
@@ -194,13 +268,7 @@ export function SkillsPage() {
   const submitEditor = async (values: SkillEditorValues) => {
     if (!target) return
     if (target.kind === 'add') {
-      await skillCreate.mutateAsync({
-        data: {
-          name: values.name,
-          categoryId: target.categoryId,
-          jobTypeIds: values.jobTypeIds,
-        },
-      })
+      await skillAdd.mutateAsync({ ...values, categoryId: target.categoryId })
       // 연속 입력을 위해 팝오버를 열어둔 채 새로 마운트한다.
       // 방금 고른 직군을 그대로 물려줘야 같은 직군의 스킬을 연달아 넣기 쉽다.
       setLastJobTypeIds(values.jobTypeIds)
@@ -343,7 +411,7 @@ export function SkillsPage() {
                       initialJobTypeIds={target.jobTypeIds}
                       jobTypes={jobTypes}
                       submitLabel="추가"
-                      isPending={skillCreate.isPending}
+                      isPending={skillAdd.isPending}
                       align="right"
                       onSubmit={submitEditor}
                       onClose={closeEditor}
