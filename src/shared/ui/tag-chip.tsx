@@ -3,10 +3,13 @@ import type { KeyboardEvent } from 'react'
 /** 태그 관리 화면의 라이트 칩. 라벨 클릭=수정, ✕=삭제. */
 export function TagChip({
   label,
+  deleteLabel,
   onEdit,
   onDelete,
 }: {
   label: string
+  /** ✕ 의 스크린리더 문구. 기본은 `"label 삭제"`. 지우는 게 아니면(예: 연결 해제) 바꿔 쓴다. */
+  deleteLabel?: string
   onEdit: () => void
   onDelete: () => void
 }) {
@@ -18,7 +21,7 @@ export function TagChip({
       <button
         type="button"
         onClick={onDelete}
-        aria-label={`${label} 삭제`}
+        aria-label={deleteLabel ?? `${label} 삭제`}
         className="text-[#5b5f6e] hover:text-[#242736]"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>

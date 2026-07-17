@@ -207,6 +207,43 @@ export function SkillsPage() {
     skillDelete.mutateAsync({ id }),
   )
 
+  const filterName =
+    jobTypes.find((jt) => jt.id === jobTypeFilter)?.name ?? '이 직군'
+
+  /**
+   * 칩의 ✕ 가 삭제가 아니라 "이 직군에서만 연결 해제" 인가?
+   *
+   * 직군을 걸러 보는 중이면 화면엔 그 직군의 스킬만 보인다. 그 상태에서 지운다는 건 보통
+   * 그 직군에서 빼겠다는 뜻이지 다른 직군에서까지 없애겠다는 뜻은 아니다.
+   * 단 남는 직군이 없으면(그 직군이 마지막) 연결만 끊을 수 없어서(jobTypeIds 는 빈 배열
+   * 불가) 스킬을 지운다 — 어차피 다른 직군엔 안 붙어 있어 눈에 보이는 결과는 같다.
+   */
+  const isUnlinkOnly = (skill: SkillResponse) =>
+    jobTypeFilter !== null &&
+    skill.jobTypes.some((jt) => jt.id !== jobTypeFilter)
+
+  /** 토스트 제목과 ✕ 의 스크린리더 문구를 같은 말로 맞춘다. */
+  const removalLabel = (skill: SkillResponse) =>
+    `"${skill.name}" 을(를) '${filterName}' 에서 연결 해제`
+
+  const requestSkillRemoval = (skill: SkillResponse) => {
+    if (!isUnlinkOnly(skill)) {
+      skillUndo.request(skill.id, skill.name)
+      return
+    }
+    const remaining = skill.jobTypes
+      .filter((jt) => jt.id !== jobTypeFilter)
+      .map((jt) => jt.id)
+    skillUndo.request(skill.id, skill.name, {
+      title: removalLabel(skill),
+      commit: () =>
+        skillUpdate.mutateAsync({
+          id: skill.id,
+          data: { jobTypeIds: remaining },
+        }),
+    })
+  }
+
   const categories = catUndo.filterVisible(allCategories, (c) => c.id)
   // skillQueries 는 allCategories 와 같은 순서라 인덱스로 짝지어진다.
   const skillsByCategory = new Map<number, SkillResponse[]>(
@@ -379,8 +416,11 @@ export function SkillsPage() {
                 <div key={skill.id} className="relative">
                   <TagChip
                     label={skill.name}
+                    deleteLabel={
+                      isUnlinkOnly(skill) ? removalLabel(skill) : undefined
+                    }
                     onEdit={() => setTarget({ kind: 'edit', skill })}
-                    onDelete={() => skillUndo.request(skill.id, skill.name)}
+                    onDelete={() => requestSkillRemoval(skill)}
                   />
                   {target?.kind === 'edit' && target.skill.id === skill.id && (
                     <SkillEditorPopover
