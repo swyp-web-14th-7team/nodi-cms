@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.2
+ * OpenAPI spec version: 0.4.1
  */
 import { useMutation } from "@tanstack/react-query";
 import type {
@@ -14,6 +14,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  FilesControllerUploadCardBackgroundImage200,
   FilesControllerUploadPersonalityImage200,
   FilesControllerUploadProfileImage200,
   UploadImageDto,
@@ -29,7 +30,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  *
  * 업로드 시 아래 4개 객체가 `profile/{YYYY}/{mm}/{uuid}/` 하위에 저장된다.
  * - `origin.webp` : 원본(리사이즈 없이 webp 변환만)
- * - `72.webp` / `60.webp` / `48.webp` : 정사각 cover 크롭 파생본
+ * - `72.webp` / `56.webp` / `48.webp` : 정사각 cover 크롭 파생본
  *
  * 응답 `url` 은 uuid 까지의 base URL 이며, 실제 이미지는 뒤에 파일명을 붙여 접근한다.
  * 예) `${url}/origin.webp`, `${url}/72.webp`
@@ -230,6 +231,112 @@ export const useFilesControllerUploadPersonalityImage = <
 > => {
   return useMutation(
     getFilesControllerUploadPersonalityImageMutationOptions(options),
+    queryClient,
+  );
+};
+/**
+ * 이미지 1장(png/jpg/webp, 최대 5MB)을 `multipart/form-data` 의 `file` 필드로 받는다.
+ *
+ * 업로드 시 아래 2개 객체가 `card-background/{YYYY}/{mm}/{uuid}/` 하위에 저장된다.
+ * - `origin.webp` : 원본(리사이즈 없이 webp 변환만)
+ * - `282x400.webp` : 282x400 cover 크롭 파생본(카드 표시용)
+ *
+ * 응답 `url` 은 uuid 까지의 base URL 이며, 실제 이미지는 뒤에 파일명을 붙여 접근한다.
+ * 예) `${url}/origin.webp`, `${url}/282x400.webp`
+ * @summary 카드 배경 이미지 업로드 (ADMIN)
+ */
+export const filesControllerUploadCardBackgroundImage = (
+  uploadImageDto: BodyType<UploadImageDto>,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal,
+) => {
+  const formData = new FormData();
+  formData.append(`file`, uploadImageDto.file);
+
+  return customInstance<FilesControllerUploadCardBackgroundImage200>(
+    {
+      url: `/files/card-background-image/upload`,
+      method: "POST",
+      headers: { "Content-Type": "multipart/form-data" },
+      data: formData,
+      signal,
+    },
+    options,
+  );
+};
+
+export const getFilesControllerUploadCardBackgroundImageMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof filesControllerUploadCardBackgroundImage>>,
+    TError,
+    { data: BodyType<UploadImageDto> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof filesControllerUploadCardBackgroundImage>>,
+  TError,
+  { data: BodyType<UploadImageDto> },
+  TContext
+> => {
+  const mutationKey = ["filesControllerUploadCardBackgroundImage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof filesControllerUploadCardBackgroundImage>>,
+    { data: BodyType<UploadImageDto> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return filesControllerUploadCardBackgroundImage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FilesControllerUploadCardBackgroundImageMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof filesControllerUploadCardBackgroundImage>>
+  >;
+export type FilesControllerUploadCardBackgroundImageMutationBody =
+  BodyType<UploadImageDto>;
+export type FilesControllerUploadCardBackgroundImageMutationError =
+  ErrorType<void>;
+
+/**
+ * @summary 카드 배경 이미지 업로드 (ADMIN)
+ */
+export const useFilesControllerUploadCardBackgroundImage = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof filesControllerUploadCardBackgroundImage>>,
+      TError,
+      { data: BodyType<UploadImageDto> },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof filesControllerUploadCardBackgroundImage>>,
+  TError,
+  { data: BodyType<UploadImageDto> },
+  TContext
+> => {
+  return useMutation(
+    getFilesControllerUploadCardBackgroundImageMutationOptions(options),
     queryClient,
   );
 };

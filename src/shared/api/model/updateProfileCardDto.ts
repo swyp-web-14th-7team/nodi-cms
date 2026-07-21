@@ -3,8 +3,9 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.2
+ * OpenAPI spec version: 0.4.1
  */
+import type { ProfileCardExperienceInputDto } from "./profileCardExperienceInputDto";
 import type { ProfileCardLinkInputDto } from "./profileCardLinkInputDto";
 
 export interface UpdateProfileCardDto {
@@ -25,6 +26,8 @@ export interface UpdateProfileCardDto {
   personalityId?: number;
   /** 한 줄 소개 */
   description?: string;
+  /** 공개 여부 (true: 공개, false: 비공개) */
+  isActive?: boolean;
   /**
    * 소속 상태
    * @minimum 1
@@ -46,4 +49,6 @@ export interface UpdateProfileCardDto {
   profileImageUrl?: string;
   /** 링크 목록 (전체 교체: 넘긴 목록으로 덮어씀). 각 항목 type — 0: EMAIL, 1: INSTAGRAM, 2: GITHUB, 3: LINKEDIN, 4: BEHANCE, 5: NOTION, 6: WEBSITE */
   links?: ProfileCardLinkInputDto[];
+  /** 관련 경험 목록 (전체 교체: 넘긴 목록으로 덮어씀). sortOrder 는 표시 순서이며 1이 대표 경험, 목록 내 중복 불가 */
+  experiences?: ProfileCardExperienceInputDto[];
 }

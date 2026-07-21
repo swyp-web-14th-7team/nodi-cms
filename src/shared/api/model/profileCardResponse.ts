@@ -3,13 +3,14 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.2
+ * OpenAPI spec version: 0.4.1
  */
 import type { AffiliationStatusResponse } from "./affiliationStatusResponse";
 import type { FormattedDate } from "./formattedDate";
 import type { PersonalityResponse } from "./personalityResponse";
 import type { ProfileCardInterestResponse } from "./profileCardInterestResponse";
 import type { ProfileCardLinkResponse } from "./profileCardLinkResponse";
+import type { ProfileExperienceResponse } from "./profileExperienceResponse";
 import type { PurposeResponse } from "./purposeResponse";
 
 export interface ProfileCardResponse {
@@ -22,7 +23,7 @@ export interface ProfileCardResponse {
   description: string;
   affiliation: string | null;
   isActive: boolean;
-  isDefault: boolean;
+  isDefault: boolean | null;
   userId: string;
   createdAt: FormattedDate;
   updatedAt: FormattedDate;
@@ -36,4 +37,6 @@ export interface ProfileCardResponse {
   jobTypeName?: string | null;
   /** 링크 목록. 각 항목 type — 0: EMAIL, 1: INSTAGRAM, 2: GITHUB, 3: LINKEDIN, 4: BEHANCE, 5: NOTION, 6: WEBSITE */
   links?: ProfileCardLinkResponse[];
+  /** 관련 경험. **목록 조회**(GET /profile-cards, GET /public/profile-cards)에서는 대표 경험(sortOrder 가장 앞) 1개만 포함되고, **단건 조회·생성·수정**에서는 sortOrder 오름차순 전체가 포함됩니다. */
+  experiences: ProfileExperienceResponse[];
 }

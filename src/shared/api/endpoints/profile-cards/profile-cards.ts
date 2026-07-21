@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.2
+ * OpenAPI spec version: 0.4.1
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -23,13 +23,12 @@ import type {
 
 import type {
   CreateProfileCardDto,
-  ProfileCardResponse,
   ProfileCardsControllerCreateProfileCard200,
+  ProfileCardsControllerDeleteProfileCard200,
   ProfileCardsControllerGetProfileCard200,
-  ProfileCardsControllerGetProfileCardShareToken200,
   ProfileCardsControllerGetProfileCards200,
   ProfileCardsControllerGetProfileCardsParams,
-  ProfileCardsControllerUpdateProfileCardShareToken200,
+  ProfileCardsControllerUpdateProfileCard200,
   UpdateProfileCardDto,
 } from "../../model";
 
@@ -57,6 +56,11 @@ const withQueryKey = <T extends object, K>(
 };
 
 /**
+ * 로그인한 유저 본인이 소유한 프로필 카드 목록을 페이지네이션으로 조회합니다.
+ *
+ * ★ experiences 는 **대표 경험 1개만**(sortOrder 가장 앞) 포함됩니다.
+ *   전체 경험이 필요하면 단건 조회(`GET /profile-cards/{id}`)를 사용하세요.
+ *   그 외 응답 필드(skills·links·personality 등)는 단건 조회와 동일합니다.
  * @summary 유저 프로필 카드 목록 조회
  */
 export const profileCardsControllerGetProfileCards = (
@@ -228,7 +232,13 @@ export function useProfileCardsControllerGetProfileCards<
  * 유저 프로필 카드를 생성합니다. 동작 방식은 두 가지로 나뉩니다.
  *
  * 1. 유저의 Default 프로필 카드가 없는 경우 (온보딩)
+ *    → 이 카드가 Default 카드로 생성되며, purposeId 는 요청값과 무관하게 null 로 고정됩니다.
  * 2. 유저의 Default 프로필 카드가 있는 경우 (추후 카드 생성 시점)
+ *    → jobTypeId / purposeId 는 요청값으로 설정되고, Default 카드에서는 nickname 과 links 만 기본값으로 복사됩니다.
+ *    → 나머지 필드는 비워둔 채 생성되며 이후 update 로 채웁니다.
+ *
+ * ★ 응답은 관계까지 포함한 완전한 카드(단건 조회와 동일 형태)입니다.
+ *   experiences 는 전체 포함이며, 첫 카드(온보딩)는 아직 비어 있어 `[]` 로 나옵니다.
  * @summary 유저 프로필 카드 생성
  */
 export const profileCardsControllerCreateProfileCard = (
@@ -322,6 +332,14 @@ export const useProfileCardsControllerCreateProfileCard = <
     queryClient,
   );
 };
+/**
+ * 로그인한 유저 본인이 소유한 프로필 카드를 id 로 조회합니다.
+ * 본인 소유가 아니거나 존재하지 않으면 404 를 반환합니다.
+ *
+ * ★ experiences 는 **전체**를 sortOrder 오름차순으로 포함합니다.
+ *   (목록 조회는 대표 1개만 — 차이 주의)
+ * @summary 유저 프로필 카드 단건 조회
+ */
 export const profileCardsControllerGetProfileCard = (
   id: string,
   options?: SecondParameter<typeof customInstance>,
@@ -454,6 +472,9 @@ export function useProfileCardsControllerGetProfileCard<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
+/**
+ * @summary 유저 프로필 카드 단건 조회
+ */
 
 export function useProfileCardsControllerGetProfileCard<
   TData = Awaited<ReturnType<typeof profileCardsControllerGetProfileCard>>,
@@ -492,6 +513,11 @@ export function useProfileCardsControllerGetProfileCard<
  *
  * links 는 전체 교체(넘긴 목록으로 덮어씀)이며, 각 항목 type 매핑은 다음과 같습니다.
  * 0: EMAIL, 1: INSTAGRAM, 2: GITHUB, 3: LINKEDIN, 4: BEHANCE, 5: NOTION, 6: WEBSITE
+ *
+ * experiences 도 전체 교체입니다(넘긴 목록으로 기존 경험을 통째로 덮어씀).
+ *
+ * ★ 응답은 갱신된 관계까지 포함한 완전한 카드(단건 조회와 동일 형태)이며,
+ *   experiences 는 전체를 포함합니다.
  * @summary 유저 프로필 카드 업데이트
  */
 export const profileCardsControllerUpdateProfileCard = (
@@ -500,7 +526,7 @@ export const profileCardsControllerUpdateProfileCard = (
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal,
 ) => {
-  return customInstance<ProfileCardResponse>(
+  return customInstance<ProfileCardsControllerUpdateProfileCard200>(
     {
       url: `/profile-cards/${id}`,
       method: "PATCH",
@@ -587,294 +613,79 @@ export const useProfileCardsControllerUpdateProfileCard = <
   );
 };
 /**
- * 카드의 QR 공유 토큰을 조회합니다. 소유자만 조회할 수 있습니다.
- * 프론트에서 이 토큰으로 `{웹 주소}/public/profile-cards/share/{shareToken}`
- * 형태의 URL 을 만들어 QR 로 인코딩하면 됩니다.
- * @summary QR 공유 토큰 조회
- */
-export const profileCardsControllerGetProfileCardShareToken = (
-  id: string,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal,
-) => {
-  return customInstance<ProfileCardsControllerGetProfileCardShareToken200>(
-    { url: `/profile-cards/${id}/share`, method: "GET", signal },
-    options,
-  );
-};
-
-export const getProfileCardsControllerGetProfileCardShareTokenQueryKey = (
-  id: string,
-) => {
-  return [`/profile-cards/${id}/share`] as const;
-};
-
-export const getProfileCardsControllerGetProfileCardShareTokenQueryOptions = <
-  TData = Awaited<
-    ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-  >,
-  TError = ErrorType<void>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-        >,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ??
-    getProfileCardsControllerGetProfileCardShareTokenQueryKey(id);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof profileCardsControllerGetProfileCardShareToken>>
-  > = ({ signal }) =>
-    profileCardsControllerGetProfileCardShareToken(id, requestOptions, signal);
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: id !== null && id !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof profileCardsControllerGetProfileCardShareToken>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type ProfileCardsControllerGetProfileCardShareTokenQueryResult =
-  NonNullable<
-    Awaited<ReturnType<typeof profileCardsControllerGetProfileCardShareToken>>
-  >;
-export type ProfileCardsControllerGetProfileCardShareTokenQueryError =
-  ErrorType<void>;
-
-export function useProfileCardsControllerGetProfileCardShareToken<
-  TData = Awaited<
-    ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-  >,
-  TError = ErrorType<void>,
->(
-  id: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-        >,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<
-            ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-          >,
-          TError,
-          Awaited<
-            ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-          >
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useProfileCardsControllerGetProfileCardShareToken<
-  TData = Awaited<
-    ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-  >,
-  TError = ErrorType<void>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-        >,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<
-            ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-          >,
-          TError,
-          Awaited<
-            ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-          >
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useProfileCardsControllerGetProfileCardShareToken<
-  TData = Awaited<
-    ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-  >,
-  TError = ErrorType<void>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-        >,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary QR 공유 토큰 조회
- */
-
-export function useProfileCardsControllerGetProfileCardShareToken<
-  TData = Awaited<
-    ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-  >,
-  TError = ErrorType<void>,
->(
-  id: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof profileCardsControllerGetProfileCardShareToken>
-        >,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions =
-    getProfileCardsControllerGetProfileCardShareTokenQueryOptions(id, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-/**
- * 카드의 QR 공유 토큰을 새로 발급합니다. 소유자만 호출할 수 있습니다.
+ * 로그인한 유저 본인이 소유한 프로필 카드를 삭제합니다.
+ * 본인 소유가 아니거나 존재하지 않으면 404 를 반환합니다.
  *
- * 이미 공유한 QR 을 무효화할 때 사용합니다. 재발급 시점부터 기존 토큰으로는
- * 조회되지 않습니다.
- * @summary QR 공유 토큰 재발급
+ * ★ 기본(Default) 카드는 다른 카드 생성의 원본(seed)이므로 삭제할 수 없으며 400 을 반환합니다.
+ *   카드에 연결된 경험/스킬/관심사/링크/스크랩은 함께 정리됩니다.
+ * @summary 유저 프로필 카드 삭제
  */
-export const profileCardsControllerUpdateProfileCardShareToken = (
+export const profileCardsControllerDeleteProfileCard = (
   id: string,
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal,
 ) => {
-  return customInstance<ProfileCardsControllerUpdateProfileCardShareToken200>(
-    { url: `/profile-cards/${id}/share`, method: "PATCH", signal },
+  return customInstance<ProfileCardsControllerDeleteProfileCard200>(
+    { url: `/profile-cards/${id}`, method: "DELETE", signal },
     options,
   );
 };
 
-export const getProfileCardsControllerUpdateProfileCardShareTokenMutationOptions =
-  <TError = ErrorType<void>, TContext = unknown>(options?: {
-    mutation?: UseMutationOptions<
-      Awaited<
-        ReturnType<typeof profileCardsControllerUpdateProfileCardShareToken>
-      >,
-      TError,
-      { id: string },
-      TContext
-    >;
-    request?: SecondParameter<typeof customInstance>;
-  }): UseMutationOptions<
-    Awaited<
-      ReturnType<typeof profileCardsControllerUpdateProfileCardShareToken>
-    >,
+export const getProfileCardsControllerDeleteProfileCardMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof profileCardsControllerDeleteProfileCard>>,
     TError,
     { id: string },
     TContext
-  > => {
-    const mutationKey = ["profileCardsControllerUpdateProfileCardShareToken"];
-    const { mutation: mutationOptions, request: requestOptions } = options
-      ? options.mutation &&
-        "mutationKey" in options.mutation &&
-        options.mutation.mutationKey
-        ? options
-        : { ...options, mutation: { ...options.mutation, mutationKey } }
-      : { mutation: { mutationKey }, request: undefined };
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof profileCardsControllerDeleteProfileCard>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["profileCardsControllerDeleteProfileCard"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-    const mutationFn: MutationFunction<
-      Awaited<
-        ReturnType<typeof profileCardsControllerUpdateProfileCardShareToken>
-      >,
-      { id: string }
-    > = (props) => {
-      const { id } = props ?? {};
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof profileCardsControllerDeleteProfileCard>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
 
-      return profileCardsControllerUpdateProfileCardShareToken(
-        id,
-        requestOptions,
-      );
-    };
-
-    return { mutationFn, ...mutationOptions };
+    return profileCardsControllerDeleteProfileCard(id, requestOptions);
   };
 
-export type ProfileCardsControllerUpdateProfileCardShareTokenMutationResult =
-  NonNullable<
-    Awaited<
-      ReturnType<typeof profileCardsControllerUpdateProfileCardShareToken>
-    >
-  >;
+  return { mutationFn, ...mutationOptions };
+};
 
-export type ProfileCardsControllerUpdateProfileCardShareTokenMutationError =
+export type ProfileCardsControllerDeleteProfileCardMutationResult = NonNullable<
+  Awaited<ReturnType<typeof profileCardsControllerDeleteProfileCard>>
+>;
+
+export type ProfileCardsControllerDeleteProfileCardMutationError =
   ErrorType<void>;
 
 /**
- * @summary QR 공유 토큰 재발급
+ * @summary 유저 프로필 카드 삭제
  */
-export const useProfileCardsControllerUpdateProfileCardShareToken = <
+export const useProfileCardsControllerDeleteProfileCard = <
   TError = ErrorType<void>,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<
-        ReturnType<typeof profileCardsControllerUpdateProfileCardShareToken>
-      >,
+      Awaited<ReturnType<typeof profileCardsControllerDeleteProfileCard>>,
       TError,
       { id: string },
       TContext
@@ -883,15 +694,13 @@ export const useProfileCardsControllerUpdateProfileCardShareToken = <
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof profileCardsControllerUpdateProfileCardShareToken>>,
+  Awaited<ReturnType<typeof profileCardsControllerDeleteProfileCard>>,
   TError,
   { id: string },
   TContext
 > => {
   return useMutation(
-    getProfileCardsControllerUpdateProfileCardShareTokenMutationOptions(
-      options,
-    ),
+    getProfileCardsControllerDeleteProfileCardMutationOptions(options),
     queryClient,
   );
 };

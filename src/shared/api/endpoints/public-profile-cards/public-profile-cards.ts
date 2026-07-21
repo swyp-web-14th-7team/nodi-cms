@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.2
+ * OpenAPI spec version: 0.4.1
  */
 import { useQuery } from "@tanstack/react-query";
 import type {
@@ -22,7 +22,6 @@ import type {
   PublicProfileCardsControllerGetPublicProfileCard200,
   PublicProfileCardsControllerGetPublicProfileCards200,
   PublicProfileCardsControllerGetPublicProfileCardsParams,
-  PublicProfileCardsControllerGetSharedProfileCard200,
 } from "../../model";
 
 import { customInstance } from "../../http-client";
@@ -49,222 +48,10 @@ const withQueryKey = <T extends object, K>(
 };
 
 /**
- * 인증 없이 QR 공유 토큰으로 프로필 카드를 조회합니다. (QR 스캔용)
- *
- * 토큰을 가진 것 자체가 접근 권한이므로, 목록에 노출되지 않는
- * 비공개(isActive=false) 카드도 이 경로로는 조회됩니다.
- * @summary QR 공유 토큰으로 프로필 카드 조회 (public)
- */
-export const publicProfileCardsControllerGetSharedProfileCard = (
-  token: string,
-  options?: SecondParameter<typeof customInstance>,
-  signal?: AbortSignal,
-) => {
-  return customInstance<PublicProfileCardsControllerGetSharedProfileCard200>(
-    { url: `/public/profile-cards/share/${token}`, method: "GET", signal },
-    options,
-  );
-};
-
-export const getPublicProfileCardsControllerGetSharedProfileCardQueryKey = (
-  token: string,
-) => {
-  return [`/public/profile-cards/share/${token}`] as const;
-};
-
-export const getPublicProfileCardsControllerGetSharedProfileCardQueryOptions = <
-  TData = Awaited<
-    ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-  >,
-  TError = ErrorType<void>,
->(
-  token: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-        >,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ??
-    getPublicProfileCardsControllerGetSharedProfileCardQueryKey(token);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>>
-  > = ({ signal }) =>
-    publicProfileCardsControllerGetSharedProfileCard(
-      token,
-      requestOptions,
-      signal,
-    );
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: token !== null && token !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<
-      ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-    >,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type PublicProfileCardsControllerGetSharedProfileCardQueryResult =
-  NonNullable<
-    Awaited<ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>>
-  >;
-export type PublicProfileCardsControllerGetSharedProfileCardQueryError =
-  ErrorType<void>;
-
-export function usePublicProfileCardsControllerGetSharedProfileCard<
-  TData = Awaited<
-    ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-  >,
-  TError = ErrorType<void>,
->(
-  token: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-        >,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<
-            ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-          >,
-          TError,
-          Awaited<
-            ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-          >
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function usePublicProfileCardsControllerGetSharedProfileCard<
-  TData = Awaited<
-    ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-  >,
-  TError = ErrorType<void>,
->(
-  token: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-        >,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<
-            ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-          >,
-          TError,
-          Awaited<
-            ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-          >
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function usePublicProfileCardsControllerGetSharedProfileCard<
-  TData = Awaited<
-    ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-  >,
-  TError = ErrorType<void>,
->(
-  token: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-        >,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary QR 공유 토큰으로 프로필 카드 조회 (public)
- */
-
-export function usePublicProfileCardsControllerGetSharedProfileCard<
-  TData = Awaited<
-    ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-  >,
-  TError = ErrorType<void>,
->(
-  token: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<
-          ReturnType<typeof publicProfileCardsControllerGetSharedProfileCard>
-        >,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customInstance>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions =
-    getPublicProfileCardsControllerGetSharedProfileCardQueryOptions(
-      token,
-      options,
-    );
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-/**
  * 인증 없이 카드 ID 로 프로필 카드를 조회합니다. (카드 공유용)
- * @summary 프로필 카드 단건 조회 (public)
+ *
+ * ★ experiences 는 전체를 sortOrder 오름차순으로 포함합니다. (목록 조회는 대표 1개만)
+ * @summary 공개 프로필 카드 단건 조회 (public)
  */
 export const publicProfileCardsControllerGetPublicProfileCard = (
   id: string,
@@ -433,7 +220,7 @@ export function usePublicProfileCardsControllerGetPublicProfileCard<
   queryKey: DataTag<QueryKey, TData, TError>;
 };
 /**
- * @summary 프로필 카드 단건 조회 (public)
+ * @summary 공개 프로필 카드 단건 조회 (public)
  */
 
 export function usePublicProfileCardsControllerGetPublicProfileCard<
@@ -476,6 +263,9 @@ export function usePublicProfileCardsControllerGetPublicProfileCard<
 /**
  * 인증 없이 활성(isActive) 프로필 카드 목록을 조회합니다.
  * purpose / jobTypeId / affiliationStatusId 필터와 keywords(닉네임) 검색을 지원합니다.
+ *
+ * ★ experiences 는 **대표 경험 1개만**(sortOrder 가장 앞) 포함됩니다.
+ *   전체 경험이 필요하면 단건 조회를 사용하세요. (사설 목록 조회와 동일한 규칙)
  * @summary 공개 프로필 카드 목록 조회 (public)
  */
 export const publicProfileCardsControllerGetPublicProfileCards = (

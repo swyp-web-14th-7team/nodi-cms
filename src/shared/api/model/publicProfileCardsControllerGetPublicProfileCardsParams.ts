@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.2
+ * OpenAPI spec version: 0.4.1
  */
 import type { PublicProfileCardsControllerGetPublicProfileCardsOrder } from "./publicProfileCardsControllerGetPublicProfileCardsOrder";
 import type { PublicProfileCardsControllerGetPublicProfileCardsSort } from "./publicProfileCardsControllerGetPublicProfileCardsSort";
@@ -19,7 +19,7 @@ export type PublicProfileCardsControllerGetPublicProfileCardsParams = {
    */
   limit?: number;
   /**
-   * 정렬할 필드명
+   * 정렬 기준. createdAt = 최신순, nickname = 닉네임 가나다순 (기본값 createdAt)
    */
   sort?: PublicProfileCardsControllerGetPublicProfileCardsSort;
   order?: PublicProfileCardsControllerGetPublicProfileCardsOrder;
@@ -27,7 +27,7 @@ export type PublicProfileCardsControllerGetPublicProfileCardsParams = {
    * 목적 필터
    * @minimum 1
    */
-  purpose?: number;
+  purposeId?: number;
   /**
    * 직군 필터
    * @minimum 1

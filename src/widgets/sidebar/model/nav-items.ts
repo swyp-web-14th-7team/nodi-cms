@@ -8,6 +8,8 @@ export interface NavItem {
 /** 사이드바 네비게이션 항목. API 도메인(태그) 기준으로 구성한다. */
 export const NAV_ITEMS: NavItem[] = [
   { label: '대시보드', to: ROUTES.dashboard },
+  { label: '유저 관리', to: ROUTES.users },
+  { label: '카드 배경', to: ROUTES.cardBackgrounds },
   { label: '스킬 태그', to: ROUTES.skills },
   { label: '관심분야 태그', to: ROUTES.interests },
   { label: '직무', to: ROUTES.jobTypes },

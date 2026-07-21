@@ -5,6 +5,8 @@ export const ROUTES = {
   authCallback: '/auth/:provider/callback',
   forbidden: '/forbidden',
   dashboard: '/',
+  users: '/users',
+  cardBackgrounds: '/card-backgrounds',
   skills: '/skills',
   interests: '/interests',
   jobTypes: '/job-types',

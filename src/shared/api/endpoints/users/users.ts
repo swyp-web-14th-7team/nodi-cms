@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.2
+ * OpenAPI spec version: 0.4.1
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -23,8 +23,11 @@ import type {
 
 import type {
   UpdateProfileDto,
+  UsersControllerGetAllUsers200,
+  UsersControllerGetAllUsersParams,
   UsersControllerGetMe200,
   UsersControllerUpdateMe200,
+  UsersControllerWithdraw200,
 } from "../../model";
 
 import { customInstance } from "../../http-client";
@@ -49,6 +52,181 @@ const withQueryKey = <T extends object, K>(
   }
   return result;
 };
+
+/**
+ * 모든 유저를 페이지네이션으로 조회합니다. 탈퇴한 유저도 포함됩니다. ADMIN 권한이 필요합니다.
+ *
+ * **요청 query**
+ * - page, limit, sort, order: 페이지네이션 옵션
+ *
+ * **응답 body**
+ * - items: 유저 목록 (각 항목에 마지막 로그인 시각 lastLoginAt, 탈퇴 시각 deletedAt 포함)
+ * - metadata: 페이지네이션 정보
+ * @summary 전체 유저 조회 (관리자)
+ */
+export const usersControllerGetAllUsers = (
+  params: UsersControllerGetAllUsersParams,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal,
+) => {
+  return customInstance<UsersControllerGetAllUsers200>(
+    { url: `/users`, method: "GET", params, signal },
+    options,
+  );
+};
+
+export const getUsersControllerGetAllUsersQueryKey = (
+  params?: UsersControllerGetAllUsersParams,
+) => {
+  return [`/users`, ...(params ? [params] : [])] as const;
+};
+
+export const getUsersControllerGetAllUsersQueryOptions = <
+  TData = Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+  TError = ErrorType<void>,
+>(
+  params: UsersControllerGetAllUsersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getUsersControllerGetAllUsersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof usersControllerGetAllUsers>>
+  > = ({ signal }) =>
+    usersControllerGetAllUsers(params, requestOptions, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UsersControllerGetAllUsersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof usersControllerGetAllUsers>>
+>;
+export type UsersControllerGetAllUsersQueryError = ErrorType<void>;
+
+export function useUsersControllerGetAllUsers<
+  TData = Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+  TError = ErrorType<void>,
+>(
+  params: UsersControllerGetAllUsersParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+          TError,
+          Awaited<ReturnType<typeof usersControllerGetAllUsers>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useUsersControllerGetAllUsers<
+  TData = Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+  TError = ErrorType<void>,
+>(
+  params: UsersControllerGetAllUsersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+          TError,
+          Awaited<ReturnType<typeof usersControllerGetAllUsers>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useUsersControllerGetAllUsers<
+  TData = Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+  TError = ErrorType<void>,
+>(
+  params: UsersControllerGetAllUsersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary 전체 유저 조회 (관리자)
+ */
+
+export function useUsersControllerGetAllUsers<
+  TData = Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+  TError = ErrorType<void>,
+>(
+  params: UsersControllerGetAllUsersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof usersControllerGetAllUsers>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getUsersControllerGetAllUsersQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 /**
  * 현재 로그인한 사용자의 프로필 정보를 반환합니다. User 이상의 역할이 필합니다.
@@ -293,6 +471,94 @@ export const useUsersControllerUpdateMe = <
 > => {
   return useMutation(
     getUsersControllerUpdateMeMutationOptions(options),
+    queryClient,
+  );
+};
+/**
+ * 현재 로그인한 사용자를 탈퇴 처리합니다. 계정 정보는 일정 기간 보관됩니다.
+ *
+ * - 소셜 인증 연결이 해제되어 더 이상 로그인할 수 없습니다.
+ * - 모든 기기의 로그인 세션이 종료되고 리프레시 토큰 쿠키가 제거됩니다.
+ * - 동일한 이메일/소셜 계정으로 다시 가입할 수 있습니다.
+ * @summary 회원 탈퇴
+ */
+export const usersControllerWithdraw = (
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal,
+) => {
+  return customInstance<UsersControllerWithdraw200>(
+    { url: `/users/me`, method: "DELETE", signal },
+    options,
+  );
+};
+
+export const getUsersControllerWithdrawMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof usersControllerWithdraw>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof usersControllerWithdraw>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["usersControllerWithdraw"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof usersControllerWithdraw>>,
+    void
+  > = () => {
+    return usersControllerWithdraw(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UsersControllerWithdrawMutationResult = NonNullable<
+  Awaited<ReturnType<typeof usersControllerWithdraw>>
+>;
+
+export type UsersControllerWithdrawMutationError = ErrorType<void>;
+
+/**
+ * @summary 회원 탈퇴
+ */
+export const useUsersControllerWithdraw = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof usersControllerWithdraw>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof usersControllerWithdraw>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(
+    getUsersControllerWithdrawMutationOptions(options),
     queryClient,
   );
 };

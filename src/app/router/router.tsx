@@ -3,6 +3,8 @@ import { CmsLayout } from '../../widgets/layout'
 import { ROUTES } from '../../shared/config'
 import { ProtectedRoute } from './protected-route'
 import { DashboardPage } from '../../pages/dashboard'
+import { UsersPage } from '../../pages/users'
+import { CardBackgroundsPage } from '../../pages/card-backgrounds'
 import { SkillsPage } from '../../pages/skills'
 import { InterestsPage } from '../../pages/interests'
 import { JobTypesPage } from '../../pages/job-types'
@@ -27,6 +29,8 @@ export const router = createBrowserRouter([
         element: <CmsLayout />,
         children: [
           { path: ROUTES.dashboard, element: <DashboardPage /> },
+          { path: ROUTES.users, element: <UsersPage /> },
+          { path: ROUTES.cardBackgrounds, element: <CardBackgroundsPage /> },
           { path: ROUTES.skills, element: <SkillsPage /> },
           { path: ROUTES.interests, element: <InterestsPage /> },
           { path: ROUTES.jobTypes, element: <JobTypesPage /> },
