@@ -1,10 +1,6 @@
 import { useState } from 'react'
-import { useQueries } from '@tanstack/react-query'
-import {
-  useUsersControllerGetAllUsers,
-  getUsersControllerGetAllUsersQueryOptions,
-} from '../../../shared/api/endpoints/users/users'
 import type { FormattedDate, UserResponse } from '../../../shared/api/model'
+import { useAllUsers, MAX_USERS } from '../../../entities/user'
 import {
   PageHeader,
   DataTable,
@@ -14,12 +10,6 @@ import {
 } from '../../../shared/ui'
 
 const LIMIT = 20
-
-// GET /users 쿼리에는 page·limit·sort·order 뿐이라 서버에서 탈퇴 여부로 거를 수 없다.
-// 그래서 목록을 다 받아 화면에서 나눈다. 서버 limit 상한이 100 이라 페이지를 이어 붙인다.
-const SERVER_LIMIT = 100
-// 안전장치. 이 수를 넘는 유저는 못 가져오고 안내 문구를 띄운다.
-const MAX_SERVER_PAGES = 10
 
 type UserFilter = 'active' | 'withdrawn' | 'all'
 
@@ -128,30 +118,13 @@ export function UsersPage() {
   const [filter, setFilter] = useState<UserFilter>('active')
   const [page, setPage] = useState(1)
 
-  // 첫 페이지로 전체 인원 수를 알아낸 뒤, 남은 페이지를 한꺼번에 받아 이어 붙인다.
-  const firstPage = useUsersControllerGetAllUsers({ page: 1, limit: SERVER_LIMIT })
-  const totalUsers = firstPage.data?.data.metadata?.total ?? 0
-  const serverPages = Math.min(
-    Math.ceil(totalUsers / SERVER_LIMIT),
-    MAX_SERVER_PAGES,
-  )
-
-  const restPages = useQueries({
-    queries: Array.from({ length: Math.max(0, serverPages - 1) }, (_, i) =>
-      getUsersControllerGetAllUsersQueryOptions({
-        page: i + 2,
-        limit: SERVER_LIMIT,
-      }),
-    ),
-  })
-
-  const allUsers: UserResponse[] = [
-    ...(firstPage.data?.data.items ?? []),
-    ...restPages.flatMap((q) => q.data?.data.items ?? []),
-  ]
-  const isLoading = firstPage.isLoading || restPages.some((q) => q.isLoading)
-  const isError = firstPage.isError || restPages.some((q) => q.isError)
-  const isTruncated = totalUsers > serverPages * SERVER_LIMIT
+  const {
+    users: allUsers,
+    totalCount,
+    isLoading,
+    isError,
+    isTruncated,
+  } = useAllUsers()
 
   const withdrawnCount = allUsers.filter((u) => u.deletedAt).length
   const counts: Record<UserFilter, number> = {
@@ -189,8 +162,8 @@ export function UsersPage() {
 
       {isTruncated && (
         <p className="text-sm text-muted">
-          유저가 {totalUsers}명이라 최근 {serverPages * SERVER_LIMIT}명까지만
-          불러왔습니다.
+          유저가 {totalCount.toLocaleString()}명이라 최근{' '}
+          {MAX_USERS.toLocaleString()}명까지만 불러왔습니다.
         </p>
       )}
 
