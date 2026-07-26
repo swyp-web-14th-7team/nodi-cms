@@ -29,14 +29,10 @@ interface NameCrudManagerProps {
   /**
    * 표시 순서를 관리하는 엔티티에서 넘긴다. 없으면 순서 열을 숨긴다.
    * 행 드래그 앤 드롭으로 옮기고, 사이 항목들의 재정렬은 서버가 처리한다.
-   * 페이지를 넘나드는 이동은 드래그로 안 되므로 한 칸 이동 버튼도 함께 둔다.
    */
   ordering?: {
     /** 끌던 항목을 놓은 항목의 자리로 옮긴다. */
     onReorder: (item: NameEntity, target: NameEntity) => Promise<unknown>
-    onMove: (item: NameEntity, direction: 'up' | 'down') => Promise<unknown>
-    canMoveUp: (item: NameEntity) => boolean
-    canMoveDown: (item: NameEntity) => boolean
     /** 검색 중처럼 순서를 바꾸면 안 될 때 끈다. */
     isEnabled: boolean
   }
@@ -105,48 +101,31 @@ export function NameCrudManager({
   }
 
   const columns: Column<NameEntity>[] = [
-    { key: 'id', header: 'ID', render: (i) => i.id, className: 'w-20 text-muted' },
+    // 순서 열은 ID 앞. 드래그 손잡이라 행의 맨 앞에 있어야 잡기 쉽다.
     ...(ordering
       ? [
           {
             key: 'sortOrder',
             header: '순서',
-            className: 'w-36',
+            className: 'w-20',
             render: (item: NameEntity) => (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2 text-muted">
                 <span
                   aria-hidden
-                  className={`select-none text-muted ${
+                  className={`select-none ${
                     ordering.isEnabled ? 'cursor-grab' : 'opacity-30'
                   }`}
                   title="드래그해서 순서 변경"
                 >
                   ⠿
                 </span>
-                <span className="w-6 text-muted">{item.sortOrder}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  aria-label={`${item.name} 위로 이동`}
-                  isDisabled={isMutating || !ordering.canMoveUp(item)}
-                  onPress={() => ordering.onMove(item, 'up')}
-                >
-                  ↑
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  aria-label={`${item.name} 아래로 이동`}
-                  isDisabled={isMutating || !ordering.canMoveDown(item)}
-                  onPress={() => ordering.onMove(item, 'down')}
-                >
-                  ↓
-                </Button>
+                <span>{item.sortOrder}</span>
               </div>
             ),
           },
         ]
       : []),
+    { key: 'id', header: 'ID', render: (i) => i.id, className: 'w-20 text-muted' },
     {
       key: 'name',
       header: '이름',

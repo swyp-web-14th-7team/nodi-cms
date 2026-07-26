@@ -7,7 +7,7 @@ import {
   usePurposesControllerDelete,
 } from '../../../shared/api/endpoints/purposes/purposes'
 import type { PurposesControllerFindAllParams } from '../../../shared/api/model'
-import { NameCrudManager, type NameEntity } from '../../../shared/ui'
+import { NameCrudManager } from '../../../shared/ui'
 import { useDebouncedValue } from '../../../shared/lib'
 
 const LIMIT = 10
@@ -57,14 +57,9 @@ export function PurposesPage() {
 
   const items = data?.data.items ?? []
   const total = data?.data.metadata?.total ?? 0
-  const lastPage = Math.max(1, Math.ceil(total / LIMIT))
 
-  // 검색 중에는 앞뒤 항목이 보이지 않아 한 칸 이동이 무의미하므로 막는다.
+  // 검색 중에는 걸러진 목록이라 끌어다 놓은 자리가 실제 순서와 달라 막는다.
   const canReorder = !searchTerm
-  const isFirstOverall = (item: NameEntity) =>
-    page === 1 && items[0]?.id === item.id
-  const isLastOverall = (item: NameEntity) =>
-    page === lastPage && items[items.length - 1]?.id === item.id
 
   return (
     <NameCrudManager
@@ -91,16 +86,6 @@ export function PurposesPage() {
             id: item.id,
             data: { sortOrder: target.sortOrder ?? 0 },
           }),
-        // 페이지가 나뉘면 드래그로는 경계를 못 넘어서 한 칸 이동 버튼을 함께 둔다.
-        onMove: (item, direction) =>
-          updateMut.mutateAsync({
-            id: item.id,
-            data: {
-              sortOrder: (item.sortOrder ?? 0) + (direction === 'up' ? -1 : 1),
-            },
-          }),
-        canMoveUp: (item) => canReorder && !isFirstOverall(item),
-        canMoveDown: (item) => canReorder && !isLastOverall(item),
       }}
       search={{
         value: search,
