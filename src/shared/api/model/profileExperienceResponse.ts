@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
 
 export interface ProfileExperienceResponse {
@@ -23,8 +23,8 @@ export interface ProfileExperienceResponse {
    */
   relatedUrl: string | null;
   /**
-   * 경험 순서 (1이면 대표경험)
-   * @minimum 1
+   * 경험 순서 (대표 경험은 0, 나머지는 1부터 시작)
+   * @minimum 0
    */
   sortOrder: number;
 }

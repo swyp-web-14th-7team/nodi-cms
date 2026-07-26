@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -25,10 +25,13 @@ import type {
   CreateProfileCardDto,
   ProfileCardsControllerCreateProfileCard200,
   ProfileCardsControllerDeleteProfileCard200,
+  ProfileCardsControllerGetDefaultProfileCard200,
   ProfileCardsControllerGetProfileCard200,
   ProfileCardsControllerGetProfileCards200,
   ProfileCardsControllerGetProfileCardsParams,
+  ProfileCardsControllerUpdateDefaultProfileCard200,
   ProfileCardsControllerUpdateProfileCard200,
+  UpdateDefaultProfileCardDto,
   UpdateProfileCardDto,
 } from "../../model";
 
@@ -232,7 +235,7 @@ export function useProfileCardsControllerGetProfileCards<
  * 유저 프로필 카드를 생성합니다. 동작 방식은 두 가지로 나뉩니다.
  *
  * 1. 유저의 Default 프로필 카드가 없는 경우 (온보딩)
- *    → 이 카드가 Default 카드로 생성되며, purposeId 는 요청값과 무관하게 null 로 고정됩니다.
+ *    → 이 카드가 Default 카드로 생성되며, purposeId 는 요청값과 무관하게 1 (공개) 로 고정됩니다.
  * 2. 유저의 Default 프로필 카드가 있는 경우 (추후 카드 생성 시점)
  *    → jobTypeId / purposeId 는 요청값으로 설정되고, Default 카드에서는 nickname 과 links 만 기본값으로 복사됩니다.
  *    → 나머지 필드는 비워둔 채 생성되며 이후 update 로 채웁니다.
@@ -329,6 +332,298 @@ export const useProfileCardsControllerCreateProfileCard = <
 > => {
   return useMutation(
     getProfileCardsControllerCreateProfileCardMutationOptions(options),
+    queryClient,
+  );
+};
+/**
+ * 로그인한 유저 본인의 기본(Default) 카드를 조회합니다.
+ *
+ * 기본 카드는 온보딩 시 생성되는 원본 카드로, 유저당 하나만 존재합니다.
+ *
+ * 아직 카드를 생성하지 않아 기본 카드가 없으면 404 를 반환합니다.
+ * @summary 기본(Default) 프로필 카드 조회
+ */
+export const profileCardsControllerGetDefaultProfileCard = (
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal,
+) => {
+  return customInstance<ProfileCardsControllerGetDefaultProfileCard200>(
+    { url: `/profile-cards/default`, method: "GET", signal },
+    options,
+  );
+};
+
+export const getProfileCardsControllerGetDefaultProfileCardQueryKey = () => {
+  return [`/profile-cards/default`] as const;
+};
+
+export const getProfileCardsControllerGetDefaultProfileCardQueryOptions = <
+  TData = Awaited<
+    ReturnType<typeof profileCardsControllerGetDefaultProfileCard>
+  >,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof profileCardsControllerGetDefaultProfileCard>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof customInstance>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getProfileCardsControllerGetDefaultProfileCardQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof profileCardsControllerGetDefaultProfileCard>>
+  > = ({ signal }) =>
+    profileCardsControllerGetDefaultProfileCard(requestOptions, signal);
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof profileCardsControllerGetDefaultProfileCard>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ProfileCardsControllerGetDefaultProfileCardQueryResult =
+  NonNullable<
+    Awaited<ReturnType<typeof profileCardsControllerGetDefaultProfileCard>>
+  >;
+export type ProfileCardsControllerGetDefaultProfileCardQueryError =
+  ErrorType<void>;
+
+export function useProfileCardsControllerGetDefaultProfileCard<
+  TData = Awaited<
+    ReturnType<typeof profileCardsControllerGetDefaultProfileCard>
+  >,
+  TError = ErrorType<void>,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof profileCardsControllerGetDefaultProfileCard>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<
+            ReturnType<typeof profileCardsControllerGetDefaultProfileCard>
+          >,
+          TError,
+          Awaited<
+            ReturnType<typeof profileCardsControllerGetDefaultProfileCard>
+          >
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useProfileCardsControllerGetDefaultProfileCard<
+  TData = Awaited<
+    ReturnType<typeof profileCardsControllerGetDefaultProfileCard>
+  >,
+  TError = ErrorType<void>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof profileCardsControllerGetDefaultProfileCard>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<
+            ReturnType<typeof profileCardsControllerGetDefaultProfileCard>
+          >,
+          TError,
+          Awaited<
+            ReturnType<typeof profileCardsControllerGetDefaultProfileCard>
+          >
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useProfileCardsControllerGetDefaultProfileCard<
+  TData = Awaited<
+    ReturnType<typeof profileCardsControllerGetDefaultProfileCard>
+  >,
+  TError = ErrorType<void>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof profileCardsControllerGetDefaultProfileCard>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary 기본(Default) 프로필 카드 조회
+ */
+
+export function useProfileCardsControllerGetDefaultProfileCard<
+  TData = Awaited<
+    ReturnType<typeof profileCardsControllerGetDefaultProfileCard>
+  >,
+  TError = ErrorType<void>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof profileCardsControllerGetDefaultProfileCard>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions =
+    getProfileCardsControllerGetDefaultProfileCardQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+/**
+ * 로그인한 유저 본인의 기본(Default) 카드를 수정합니다.
+ * 요청 본문의 모든 값은 Optional 하며, 넘긴 값만 반영됩니다.
+ *
+ * - nickname: 넘기면 변경, 생략하면 기존 값 유지 (1 ~ 255자)
+ * - links: 전체 교체(넘긴 목록으로 기존 링크를 통째로 덮어씀). 각 항목 type 매핑은 다음과 같습니다.
+ *   0: EMAIL, 1: INSTAGRAM, 2: GITHUB, 3: LINKEDIN, 4: BEHANCE, 5: NOTION, 6: WEBSITE
+ *
+ * ★ 기본 카드는 온보딩 시 생성되는 원본 카드로, 아직 카드가 없으면 404 를 반환합니다.
+ *   응답은 관계까지 포함한 완전한 카드(단건 조회와 동일 형태)입니다.
+ * @summary 기본(Default) 프로필 카드 수정
+ */
+export const profileCardsControllerUpdateDefaultProfileCard = (
+  updateDefaultProfileCardDto: BodyType<UpdateDefaultProfileCardDto>,
+  options?: SecondParameter<typeof customInstance>,
+  signal?: AbortSignal,
+) => {
+  return customInstance<ProfileCardsControllerUpdateDefaultProfileCard200>(
+    {
+      url: `/profile-cards/default`,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      data: updateDefaultProfileCardDto,
+      signal,
+    },
+    options,
+  );
+};
+
+export const getProfileCardsControllerUpdateDefaultProfileCardMutationOptions =
+  <TError = ErrorType<void>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof profileCardsControllerUpdateDefaultProfileCard>
+      >,
+      TError,
+      { data: BodyType<UpdateDefaultProfileCardDto> },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  }): UseMutationOptions<
+    Awaited<ReturnType<typeof profileCardsControllerUpdateDefaultProfileCard>>,
+    TError,
+    { data: BodyType<UpdateDefaultProfileCardDto> },
+    TContext
+  > => {
+    const mutationKey = ["profileCardsControllerUpdateDefaultProfileCard"];
+    const { mutation: mutationOptions, request: requestOptions } = options
+      ? options.mutation &&
+        "mutationKey" in options.mutation &&
+        options.mutation.mutationKey
+        ? options
+        : { ...options, mutation: { ...options.mutation, mutationKey } }
+      : { mutation: { mutationKey }, request: undefined };
+
+    const mutationFn: MutationFunction<
+      Awaited<
+        ReturnType<typeof profileCardsControllerUpdateDefaultProfileCard>
+      >,
+      { data: BodyType<UpdateDefaultProfileCardDto> }
+    > = (props) => {
+      const { data } = props ?? {};
+
+      return profileCardsControllerUpdateDefaultProfileCard(
+        data,
+        requestOptions,
+      );
+    };
+
+    return { mutationFn, ...mutationOptions };
+  };
+
+export type ProfileCardsControllerUpdateDefaultProfileCardMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof profileCardsControllerUpdateDefaultProfileCard>>
+  >;
+export type ProfileCardsControllerUpdateDefaultProfileCardMutationBody =
+  BodyType<UpdateDefaultProfileCardDto>;
+export type ProfileCardsControllerUpdateDefaultProfileCardMutationError =
+  ErrorType<void>;
+
+/**
+ * @summary 기본(Default) 프로필 카드 수정
+ */
+export const useProfileCardsControllerUpdateDefaultProfileCard = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<
+        ReturnType<typeof profileCardsControllerUpdateDefaultProfileCard>
+      >,
+      TError,
+      { data: BodyType<UpdateDefaultProfileCardDto> },
+      TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof profileCardsControllerUpdateDefaultProfileCard>>,
+  TError,
+  { data: BodyType<UpdateDefaultProfileCardDto> },
+  TContext
+> => {
+  return useMutation(
+    getProfileCardsControllerUpdateDefaultProfileCardMutationOptions(options),
     queryClient,
   );
 };

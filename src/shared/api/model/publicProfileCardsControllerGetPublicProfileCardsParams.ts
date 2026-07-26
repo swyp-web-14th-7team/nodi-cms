@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
 import type { PublicProfileCardsControllerGetPublicProfileCardsOrder } from "./publicProfileCardsControllerGetPublicProfileCardsOrder";
 import type { PublicProfileCardsControllerGetPublicProfileCardsSort } from "./publicProfileCardsControllerGetPublicProfileCardsSort";
@@ -38,6 +38,11 @@ export type PublicProfileCardsControllerGetPublicProfileCardsParams = {
    * @minimum 1
    */
   affiliationStatusId?: number;
+  /**
+   * 스킬 ID 필터 (배열, 하나라도 보유한 카드 조회)
+   * @items.minimum 1
+   */
+  skillIds?: number[];
   /**
    * 검색 키워드 (닉네임 / 관심사 이름)
    */

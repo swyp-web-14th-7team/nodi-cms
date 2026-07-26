@@ -3,13 +3,13 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
-import type { AdminUserResponse } from "./adminUserResponse";
 import type { PaginationMetadata } from "./paginationMetadata";
 import type { PaginationType } from "./paginationType";
+import type { UserResponse } from "./userResponse";
 
 export type UsersControllerGetAllUsers200Data = PaginationType & {
-  items?: AdminUserResponse[];
+  items?: UserResponse[];
   metadata?: PaginationMetadata;
 };

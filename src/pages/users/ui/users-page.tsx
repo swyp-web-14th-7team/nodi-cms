@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useUsersControllerGetAllUsers } from '../../../shared/api/endpoints/users/users'
 import type {
-  AdminUserResponse,
   FormattedDate,
+  UserResponse,
   UsersControllerGetAllUsersParams,
 } from '../../../shared/api/model'
 import { PageHeader, DataTable, PaginationBar, type Column } from '../../../shared/ui'
@@ -10,7 +10,7 @@ import { PageHeader, DataTable, PaginationBar, type Column } from '../../../shar
 const LIMIT = 20
 
 // FormattedDate 를 "YYYY. MM. DD." 형태로. null 이면 대시.
-const formatDate = (fd: FormattedDate | null) =>
+const formatDate = (fd?: FormattedDate | null) =>
   fd ? new Date(fd.timestamp).toLocaleDateString('ko-KR') : '—'
 
 // 상태/권한 뱃지. 활성/탈퇴, 일반/ADMIN 을 색으로 구분한다.
@@ -38,7 +38,7 @@ function Badge({
   )
 }
 
-const columns: Column<AdminUserResponse>[] = [
+const columns: Column<UserResponse>[] = [
   {
     key: 'name',
     header: '이름',
@@ -102,7 +102,7 @@ export function UsersPage() {
   const params: UsersControllerGetAllUsersParams = { page, limit: LIMIT }
   const { data, isLoading, isError } = useUsersControllerGetAllUsers(params)
 
-  const users: AdminUserResponse[] = data?.data.items ?? []
+  const users: UserResponse[] = data?.data.items ?? []
   const total = data?.data.metadata?.total ?? 0
 
   return (

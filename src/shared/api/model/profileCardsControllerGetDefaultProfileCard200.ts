@@ -3,12 +3,11 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.2.2
+ * OpenAPI spec version: 1.0.1
  */
 import type { ProfileCardResponse } from "./profileCardResponse";
 import type { ResponseSuccess } from "./responseSuccess";
 
-export type PublicProfileCardsControllerGetSharedProfileCard200 =
-  ResponseSuccess & {
-    data: ProfileCardResponse;
-  };
+export type ProfileCardsControllerGetDefaultProfileCard200 = ResponseSuccess & {
+  data: ProfileCardResponse;
+};

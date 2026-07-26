@@ -8,6 +8,8 @@ import { useUndoableDelete } from '../lib'
 export interface NameEntity {
   id: number
   name: string
+  /** 표시 순서를 쓰는 엔티티(목적)만 값이 있다. */
+  sortOrder?: number
 }
 
 interface NameCrudManagerProps {
@@ -22,6 +24,22 @@ interface NameCrudManagerProps {
   onCreate: (name: string) => Promise<unknown>
   onUpdate: (id: number, name: string) => Promise<unknown>
   onDelete: (id: number) => Promise<unknown>
+  /** 삭제할 수 없는 항목이 있으면 넘긴다. 없으면 전부 삭제 가능. */
+  isDeletable?: (item: NameEntity) => boolean
+  /**
+   * 표시 순서를 관리하는 엔티티에서 넘긴다. 없으면 순서 열을 숨긴다.
+   * 행 드래그 앤 드롭으로 옮기고, 사이 항목들의 재정렬은 서버가 처리한다.
+   * 페이지를 넘나드는 이동은 드래그로 안 되므로 한 칸 이동 버튼도 함께 둔다.
+   */
+  ordering?: {
+    /** 끌던 항목을 놓은 항목의 자리로 옮긴다. */
+    onReorder: (item: NameEntity, target: NameEntity) => Promise<unknown>
+    onMove: (item: NameEntity, direction: 'up' | 'down') => Promise<unknown>
+    canMoveUp: (item: NameEntity) => boolean
+    canMoveDown: (item: NameEntity) => boolean
+    /** 검색 중처럼 순서를 바꾸면 안 될 때 끈다. */
+    isEnabled: boolean
+  }
   /** 검색 사용 시 넘긴다. 없으면 검색바를 숨긴다. */
   search?: {
     value: string
@@ -54,6 +72,8 @@ export function NameCrudManager({
   onCreate,
   onUpdate,
   onDelete,
+  isDeletable,
+  ordering,
   search,
   pagination,
 }: NameCrudManagerProps) {
@@ -86,6 +106,47 @@ export function NameCrudManager({
 
   const columns: Column<NameEntity>[] = [
     { key: 'id', header: 'ID', render: (i) => i.id, className: 'w-20 text-muted' },
+    ...(ordering
+      ? [
+          {
+            key: 'sortOrder',
+            header: '순서',
+            className: 'w-36',
+            render: (item: NameEntity) => (
+              <div className="flex items-center gap-1">
+                <span
+                  aria-hidden
+                  className={`select-none text-muted ${
+                    ordering.isEnabled ? 'cursor-grab' : 'opacity-30'
+                  }`}
+                  title="드래그해서 순서 변경"
+                >
+                  ⠿
+                </span>
+                <span className="w-6 text-muted">{item.sortOrder}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`${item.name} 위로 이동`}
+                  isDisabled={isMutating || !ordering.canMoveUp(item)}
+                  onPress={() => ordering.onMove(item, 'up')}
+                >
+                  ↑
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`${item.name} 아래로 이동`}
+                  isDisabled={isMutating || !ordering.canMoveDown(item)}
+                  onPress={() => ordering.onMove(item, 'down')}
+                >
+                  ↓
+                </Button>
+              </div>
+            ),
+          },
+        ]
+      : []),
     {
       key: 'name',
       header: '이름',
@@ -129,13 +190,15 @@ export function NameCrudManager({
             <Button size="sm" variant="ghost" onPress={() => startEdit(item)}>
               수정
             </Button>
-            <Button
-              size="sm"
-              variant="danger-soft"
-              onPress={() => undo.request(item.id, item.name)}
-            >
-              삭제
-            </Button>
+            {(isDeletable?.(item) ?? true) && (
+              <Button
+                size="sm"
+                variant="danger-soft"
+                onPress={() => undo.request(item.id, item.name)}
+              >
+                삭제
+              </Button>
+            )}
           </div>
         ),
     },
@@ -182,6 +245,17 @@ export function NameCrudManager({
         isLoading={isLoading}
         isError={isError}
         emptyMessage={`등록된 ${entityLabel}이(가) 없습니다.`}
+        rowDrag={
+          ordering
+            ? {
+                // 이름 편집 중에는 입력 드래그와 겹치므로 끈다.
+                isEnabled: ordering.isEnabled && editingId === null,
+                onDrop: (from, to) => {
+                  ordering.onReorder(from, to)
+                },
+              }
+            : undefined
+        }
       />
 
       {pagination && pagination.total > 0 && (

@@ -3,10 +3,9 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
 import type { FormattedDate } from "./formattedDate";
-import type { ProfileCardResponse } from "./profileCardResponse";
 
 export interface UserResponse {
   /** 유저 ID */
@@ -18,5 +17,10 @@ export interface UserResponse {
   email: string;
   createdAt: FormattedDate;
   updatedAt: FormattedDate;
-  defaultCard: ProfileCardResponse | null;
+  /** 권한 (0: 일반 유저, 1: ADMIN) */
+  role?: number;
+  /** 탈퇴 시각 (미탈퇴 시 null) */
+  deletedAt?: FormattedDate | null;
+  /** 마지막 로그인 시각 (가장 최근 리프레시 토큰 갱신 시각) */
+  lastLoginAt?: FormattedDate;
 }

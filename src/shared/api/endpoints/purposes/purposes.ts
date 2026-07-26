@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -55,11 +55,12 @@ const withQueryKey = <T extends object, K>(
 };
 
 /**
- * purpose 는 createdAt 이 없어 sort 는 id·name 만 허용하며 기본값은 name 입니다.
+ * purpose 는 createdAt 이 없어 sort 는 id·name·sortOrder 만 허용하며
+ * 기본값은 sortOrder 오름차순입니다.
  * @summary 모든 purposes 를 조회합니다.
  */
 export const purposesControllerFindAll = (
-  params: PurposesControllerFindAllParams,
+  params?: PurposesControllerFindAllParams,
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal,
 ) => {
@@ -79,7 +80,7 @@ export const getPurposesControllerFindAllQueryOptions = <
   TData = Awaited<ReturnType<typeof purposesControllerFindAll>>,
   TError = ErrorType<unknown>,
 >(
-  params: PurposesControllerFindAllParams,
+  params?: PurposesControllerFindAllParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -116,7 +117,7 @@ export function usePurposesControllerFindAll<
   TData = Awaited<ReturnType<typeof purposesControllerFindAll>>,
   TError = ErrorType<unknown>,
 >(
-  params: PurposesControllerFindAllParams,
+  params: undefined | PurposesControllerFindAllParams,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -143,7 +144,7 @@ export function usePurposesControllerFindAll<
   TData = Awaited<ReturnType<typeof purposesControllerFindAll>>,
   TError = ErrorType<unknown>,
 >(
-  params: PurposesControllerFindAllParams,
+  params?: PurposesControllerFindAllParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -170,7 +171,7 @@ export function usePurposesControllerFindAll<
   TData = Awaited<ReturnType<typeof purposesControllerFindAll>>,
   TError = ErrorType<unknown>,
 >(
-  params: PurposesControllerFindAllParams,
+  params?: PurposesControllerFindAllParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -193,7 +194,7 @@ export function usePurposesControllerFindAll<
   TData = Awaited<ReturnType<typeof purposesControllerFindAll>>,
   TError = ErrorType<unknown>,
 >(
-  params: PurposesControllerFindAllParams,
+  params?: PurposesControllerFindAllParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -314,10 +315,15 @@ export const usePurposesControllerCreate = <
   );
 };
 /**
+ * `sortOrder`를 변경하면 이동 방향에 따라 사이에 있는 목적들의 순서가 자동으로 조정됩니다.
+ *
+ * 예를 들어 `A: 0, B: 1, C: 2, D: 3`인 상태에서 D를 `sortOrder: 1`로 수정하면
+ * `A: 0, D: 1, B: 2, C: 3`이 됩니다.
+ * 반대로 A를 `sortOrder: 2`로 수정하면 `B: 0, C: 1, A: 2, D: 3`이 됩니다.
  * @summary purposes 수정 (ADMIN)
  */
 export const purposesControllerUpdate = (
-  id: string,
+  id: number,
   updatePurposeDto: BodyType<UpdatePurposeDto>,
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal,
@@ -341,14 +347,14 @@ export const getPurposesControllerUpdateMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof purposesControllerUpdate>>,
     TError,
-    { id: string; data: BodyType<UpdatePurposeDto> },
+    { id: number; data: BodyType<UpdatePurposeDto> },
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof purposesControllerUpdate>>,
   TError,
-  { id: string; data: BodyType<UpdatePurposeDto> },
+  { id: number; data: BodyType<UpdatePurposeDto> },
   TContext
 > => {
   const mutationKey = ["purposesControllerUpdate"];
@@ -362,7 +368,7 @@ export const getPurposesControllerUpdateMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof purposesControllerUpdate>>,
-    { id: string; data: BodyType<UpdatePurposeDto> }
+    { id: number; data: BodyType<UpdatePurposeDto> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -389,7 +395,7 @@ export const usePurposesControllerUpdate = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof purposesControllerUpdate>>,
       TError,
-      { id: string; data: BodyType<UpdatePurposeDto> },
+      { id: number; data: BodyType<UpdatePurposeDto> },
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -398,7 +404,7 @@ export const usePurposesControllerUpdate = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof purposesControllerUpdate>>,
   TError,
-  { id: string; data: BodyType<UpdatePurposeDto> },
+  { id: number; data: BodyType<UpdatePurposeDto> },
   TContext
 > => {
   return useMutation(
@@ -410,7 +416,7 @@ export const usePurposesControllerUpdate = <
  * @summary purposes 삭제 (ADMIN)
  */
 export const purposesControllerDelete = (
-  id: string,
+  id: number,
   options?: SecondParameter<typeof customInstance>,
   signal?: AbortSignal,
 ) => {
@@ -427,14 +433,14 @@ export const getPurposesControllerDeleteMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof purposesControllerDelete>>,
     TError,
-    { id: string },
+    { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof purposesControllerDelete>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
   const mutationKey = ["purposesControllerDelete"];
@@ -448,7 +454,7 @@ export const getPurposesControllerDeleteMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof purposesControllerDelete>>,
-    { id: string }
+    { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
@@ -475,7 +481,7 @@ export const usePurposesControllerDelete = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof purposesControllerDelete>>,
       TError,
-      { id: string },
+      { id: number },
       TContext
     >;
     request?: SecondParameter<typeof customInstance>;
@@ -484,7 +490,7 @@ export const usePurposesControllerDelete = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof purposesControllerDelete>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
   return useMutation(

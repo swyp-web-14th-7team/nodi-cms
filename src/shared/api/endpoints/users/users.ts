@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -479,6 +479,7 @@ export const useUsersControllerUpdateMe = <
  *
  * - 소셜 인증 연결이 해제되어 더 이상 로그인할 수 없습니다.
  * - 모든 기기의 로그인 세션이 종료되고 리프레시 토큰 쿠키가 제거됩니다.
+ * - 연결된 모든 프로필 카드가 비공개(isActive=false)로 전환되어 공개 목록에서 노출되지 않습니다.
  * - 동일한 이메일/소셜 계정으로 다시 가입할 수 있습니다.
  * @summary 회원 탈퇴
  */

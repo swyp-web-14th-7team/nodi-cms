@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
 import type { AffiliationStatusResponse } from "./affiliationStatusResponse";
 import type { PaginationMetadata } from "./paginationMetadata";

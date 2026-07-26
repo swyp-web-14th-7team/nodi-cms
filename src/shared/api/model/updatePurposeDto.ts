@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
 
 export interface UpdatePurposeDto {
@@ -12,4 +12,9 @@ export interface UpdatePurposeDto {
    * @maxLength 100
    */
   name?: string;
+  /**
+   * 표시 순서
+   * @minimum 0
+   */
+  sortOrder?: number;
 }

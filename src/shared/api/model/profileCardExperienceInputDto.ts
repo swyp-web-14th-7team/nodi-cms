@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 0.4.1
+ * OpenAPI spec version: 1.0.1
  */
 
 export interface ProfileCardExperienceInputDto {
@@ -25,8 +25,8 @@ export interface ProfileCardExperienceInputDto {
    */
   relatedUrl?: string;
   /**
-   * 정렬 순서 (그냥 프론트애서 표시 순서), 대표이면 1이고, 그렇지 않다면 2부터 시작
-   * @minimum 1
+   * 정렬 순서 (프론트 표시 순서). 대표 경험은 0, 나머지는 1부터 시작
+   * @minimum 0
    * @maximum 10
    */
   sortOrder: number;
