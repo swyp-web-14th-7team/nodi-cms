@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 1.0.1
+ * OpenAPI spec version: 1.4.2
  */
 
 export interface UpdateJobTypeDto {
@@ -12,4 +12,6 @@ export interface UpdateJobTypeDto {
    * @maxLength 100
    */
   name?: string;
+  /** 아이콘 url, null 이면 기존 이미지를 제거하는 것으로, undefined (미포함) 이면 수정하지 않음 */
+  imageUrl?: string | null;
 }

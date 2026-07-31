@@ -3,7 +3,7 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 1.0.1
+ * OpenAPI spec version: 1.4.2
  */
 import type { CardBackgroundImageResponse } from "./cardBackgroundImageResponse";
 import type { PaginationMetadata } from "./paginationMetadata";

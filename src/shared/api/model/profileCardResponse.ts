@@ -3,15 +3,15 @@
  * Do not edit manually.
  * 프로필 카드 공유 서비스 API
  * 프로필 카드 공유 서비스 백엔드
- * OpenAPI spec version: 1.0.1
+ * OpenAPI spec version: 1.4.2
  */
-import type { AffiliationStatusResponse } from "./affiliationStatusResponse";
 import type { FormattedDate } from "./formattedDate";
-import type { PersonalityResponse } from "./personalityResponse";
+import type { ProfileCardAffiliationStatusResponse } from "./profileCardAffiliationStatusResponse";
 import type { ProfileCardInterestResponse } from "./profileCardInterestResponse";
 import type { ProfileCardLinkResponse } from "./profileCardLinkResponse";
+import type { ProfileCardPersonalityResponse } from "./profileCardPersonalityResponse";
+import type { ProfileCardPurposeResponse } from "./profileCardPurposeResponse";
 import type { ProfileExperienceResponse } from "./profileExperienceResponse";
-import type { PurposeResponse } from "./purposeResponse";
 
 export interface ProfileCardResponse {
   id: string;
@@ -30,9 +30,9 @@ export interface ProfileCardResponse {
   /** 스킬 명칭 문자열 */
   skills?: string[];
   interests?: ProfileCardInterestResponse[];
-  personality?: PersonalityResponse | null;
-  affiliationStatus?: AffiliationStatusResponse | null;
-  purpose?: PurposeResponse | null;
+  personality?: ProfileCardPersonalityResponse | null;
+  affiliationStatus?: ProfileCardAffiliationStatusResponse | null;
+  purpose?: ProfileCardPurposeResponse | null;
   /** 기반 템플릿 직군 이름 */
   jobTypeName?: string | null;
   /** 링크 목록. 각 항목 type — 0: EMAIL, 1: INSTAGRAM, 2: GITHUB, 3: LINKEDIN, 4: BEHANCE, 5: NOTION, 6: WEBSITE */

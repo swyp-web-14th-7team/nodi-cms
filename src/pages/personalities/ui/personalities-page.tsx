@@ -1,11 +1,4 @@
-import {
-  Fragment,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react'
+import { Fragment, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, Input } from '@heroui/react'
 import {
@@ -22,15 +15,16 @@ import type {
   CreatePersonalityDto,
   JobTypeResponse,
 } from '../../../shared/api/model'
-import { PageHeader, NativeSelect, PaginationBar } from '../../../shared/ui'
+import {
+  PageHeader,
+  NativeSelect,
+  PaginationBar,
+  ImageThumb,
+  ImagePicker,
+} from '../../../shared/ui'
 import { useDebouncedValue, useUndoableDelete } from '../../../shared/lib'
 
 const LIMIT = 10
-
-// 업로드 응답 url 은 base URL 이라 파일명을 붙여 접근한다.
-// personality 업로드가 만드는 파생본은 origin.webp 와 36.webp 둘뿐이다
-// (72/60/48 은 profile-image 쪽 파생본이라 여기엔 없다).
-const imageSrc = (baseUrl: string) => `${baseUrl}/36.webp`
 
 interface PersonalityForm {
   name: string
@@ -87,7 +81,7 @@ export function PersonalitiesPage() {
   const uploadMut = useMutation({
     mutationFn: async (file: File) => {
       const res = await filesControllerUploadPersonalityImage({ file })
-      return res.data
+      return res.data.url
     },
   })
 
@@ -99,7 +93,6 @@ export function PersonalitiesPage() {
   // ── 인라인 에디터 상태 ──
   const [mode, setMode] = useState<EditorMode>(null)
   const [form, setForm] = useState<PersonalityForm>(emptyForm)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const openAdd = () => {
     setForm(emptyForm)
@@ -115,19 +108,6 @@ export function PersonalitiesPage() {
     setMode(p.id)
   }
   const closeEditor = () => setMode(null)
-
-  const onPickImage = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = '' // 같은 파일을 다시 고를 수 있게 비운다.
-    if (!file) return
-    try {
-      const res = await uploadMut.mutateAsync(file)
-      setForm((f) => ({ ...f, imageUrl: res.url }))
-    } catch {
-      // 실패는 uploadMut.isError 로 화면에 표시한다.
-      // 여기서 삼키지 않으면 unhandled rejection 이 된다.
-    }
-  }
 
   const isSaving = createMut.isPending || updateMut.isPending
 
@@ -166,51 +146,13 @@ export function PersonalitiesPage() {
         {typeof mode === 'number' ? mode : '—'}
       </td>
       <td className="px-4 py-2.5">
-        <div className="relative inline-block">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={onPickImage}
-            className="hidden"
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadMut.isPending}
-            title={form.imageUrl ? '이미지 변경' : '이미지 업로드'}
-            className="block h-9 w-9 overflow-hidden rounded border border-border transition-opacity hover:opacity-70 disabled:opacity-50"
-          >
-            {uploadMut.isPending ? (
-              <span className="flex h-full w-full items-center justify-center text-xs text-muted">
-                …
-              </span>
-            ) : form.imageUrl ? (
-              <img
-                src={imageSrc(form.imageUrl)}
-                alt="미리보기"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center bg-surface-secondary text-xs text-muted">
-                +
-              </span>
-            )}
-          </button>
-          {form.imageUrl && !uploadMut.isPending && (
-            <button
-              type="button"
-              onClick={() => setForm((f) => ({ ...f, imageUrl: '' }))}
-              aria-label="이미지 제거"
-              className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-surface-secondary text-[10px] text-muted hover:text-foreground"
-            >
-              ✕
-            </button>
-          )}
-          {uploadMut.isError && (
-            <span className="ml-1 text-xs text-danger">실패</span>
-          )}
-        </div>
+        <ImagePicker
+          value={form.imageUrl}
+          onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))}
+          onUpload={(file) => uploadMut.mutateAsync(file)}
+          isUploading={uploadMut.isPending}
+          isError={uploadMut.isError}
+        />
       </td>
       <td className="px-4 py-2.5">
         <Input
@@ -336,17 +278,7 @@ export function PersonalitiesPage() {
                   >
                     <td className="px-4 py-2.5 text-muted">{p.id}</td>
                     <td className="px-4 py-2.5">
-                      {p.imageUrl ? (
-                        <img
-                          src={imageSrc(p.imageUrl)}
-                          alt={p.name}
-                          className="h-9 w-9 rounded object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded bg-surface-secondary text-xs text-muted">
-                          —
-                        </div>
-                      )}
+                      <ImageThumb url={p.imageUrl} alt={p.name} />
                     </td>
                     <td className="px-4 py-2.5 text-foreground">{p.name}</td>
                     <td className="px-4 py-2.5">
